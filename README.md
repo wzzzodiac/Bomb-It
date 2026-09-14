@@ -2,6 +2,8 @@
 
 A small playable, local, single-player Bomberman-style browser MVP. Clear crates, collect upgrades, and defeat one wandering computer rival. Graphics are simple Phaser shapes, not final art.
 
+Live demo: [Play Bomb-It](https://wzzzodiac.github.io/Bomb-It/)
+
 ## Run
 
 Requires Node.js 20.19+ (or 22.12+). Run `npm install`, then `npm run dev` and open the local URL Vite prints. `npm run build` creates `dist/`; `npm test` checks arena/blast rules.

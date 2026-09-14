@@ -6,3 +6,7 @@
 - Keep blast propagation pure and testable; the scene owns timers, rendering, and outcomes.
 - Use one HTML touch D-pad below the canvas, responsive Phaser scaling, and no backend.
 - Toolkit game-web v0.2.0 is locally pinned in `codex-project.json`; normal work does not fetch remote instructions.
+
+## 2026-09-14 — Built Pages deployment
+
+- Vite uses `/Bomb-It/` as its base; a minimal GitHub Pages workflow publishes `dist/`, not the TypeScript source tree.

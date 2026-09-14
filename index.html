@@ -8,8 +8,12 @@
   </head>
   <body>
     <main class="shell">
-      <header class="hud"><div><h1>Bomb-It</h1><p>Clear the crates. Catch the rival in a blast.</p></div><div id="stats" aria-live="polite">Bombs 1 · Fire 2</div></header>
-      <div id="game" aria-label="Bomb-It game arena"></div>
+      <header class="masthead">
+        <div><span class="eyebrow">ONE-ON-ONE ARCADE ARENA</span><h1><span class="title-mark">✦</span> Bomb-It</h1><p>Clear the crates. Catch the rival in a blast.</p></div>
+        <span class="mode-pill"><span class="live-dot"></span> SOLO MATCH</span>
+      </header>
+      <div class="arena-top"><span class="arena-label">ARENA <strong>01</strong></span><div id="stats" class="stats" aria-live="polite">Bombs 1 · Fire 2</div></div>
+      <div class="arena-frame"><div id="game" aria-label="Bomb-It game arena"></div></div>
       <div class="controls" aria-label="Touch game controls">
         <div class="dpad">
           <button class="up" data-direction="up" aria-label="Move up">▲</button>
@@ -19,9 +23,9 @@
         </div>
         <button class="bomb-button" id="bomb-button" aria-label="Place bomb">BOMB</button>
       </div>
-      <p class="hint">WASD / arrows to move · Space to bomb</p>
+      <p class="hint"><span>CONTROLS</span> WASD / arrows to move <i>•</i> Space to bomb</p>
       <div id="result" class="result hidden" role="dialog" aria-modal="true" aria-labelledby="result-title">
-        <div class="result-card"><h2 id="result-title"></h2><button id="restart">Restart</button></div>
+        <div class="result-card"><span class="eyebrow">MATCH COMPLETE</span><h2 id="result-title"></h2><p>Ready for another round?</p><button id="restart">↻ &nbsp; Play again</button></div>
       </div>
     </main>
     <script type="module" src="/src/main.ts"></script>
