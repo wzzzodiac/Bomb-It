@@ -9,4 +9,4 @@
 
 ## 2026-09-14 — Built Pages deployment
 
-- Vite uses `/Bomb-It/` as its base; a minimal GitHub Pages workflow publishes `dist/`, not the TypeScript source tree.
+- Vite uses `/Bomb-It/` as its base; a GitHub Pages workflow publishes `dist/`, not the TypeScript source tree. While the existing branch-source Pages job remains enabled, the workflow also deploys after that job completes to prevent raw source from winning the deployment race.

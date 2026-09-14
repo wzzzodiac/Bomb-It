@@ -3,6 +3,11 @@ name: Deploy Bomb-It to Pages
 on:
   push:
     branches: [main]
+  # The existing branch-source Pages job also runs on pushes. Deploy the built
+  # artifact once more after it finishes until the source is switched to Actions.
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +21,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
