@@ -9,4 +9,4 @@
 
 ## 2026-09-14 — Built Pages deployment
 
-- Vite uses `/Bomb-It/` as its base; a GitHub Pages workflow publishes `dist/`, not the TypeScript source tree. While the existing branch-source Pages job remains enabled, the workflow also deploys after that job completes to prevent raw source from winning the deployment race.
+- Vite uses `/Bomb-It/` as its base. Since the existing Pages source is `main` root and overrides custom artifact deployments, build syncs the compiled entry/assets into that root. Editable HTML is isolated in `app/`; no second deployment workflow or repository settings change is needed.

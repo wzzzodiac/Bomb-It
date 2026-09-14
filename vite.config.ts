@@ -1,4 +1,4 @@
 import { defineConfig } from 'vite';
 
-// Project Pages is hosted at /Bomb-It/, not at the domain root.
-export default defineConfig({ base: '/Bomb-It/' });
+// Keep the editable HTML separate from the compiled index served by branch Pages.
+export default defineConfig({ base: '/Bomb-It/', build: { rollupOptions: { input: 'app/index.html' } } });

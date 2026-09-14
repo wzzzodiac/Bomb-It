@@ -6,7 +6,9 @@ Live demo: [Play Bomb-It](https://wzzzodiac.github.io/Bomb-It/)
 
 ## Run
 
-Requires Node.js 20.19+ (or 22.12+). Run `npm install`, then `npm run dev` and open the local URL Vite prints. `npm run build` creates `dist/`; `npm test` checks arena/blast rules.
+Requires Node.js 20.19+ (or 22.12+). Run `npm install`, then `npm run dev` and open the local URL at `/Bomb-It/app/` (the editable Vite entry). `npm run build` creates `dist/`; `npm test` checks arena/blast rules.
+
+GitHub Pages currently publishes `main` from the repository root. `npm run build` also syncs the generated `index.html` and `assets/` there; commit those files with source changes before pushing. Edit `app/index.html`, not the generated root entry.
 
 Stack: TypeScript, Phaser 3, Vite. No server, account, or cloud service.
 
