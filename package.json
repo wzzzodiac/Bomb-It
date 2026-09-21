@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types test/arena.test.ts",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
     "build": "tsc --noEmit && vite build && node scripts/sync-pages.mjs"
   },
   "dependencies": { "phaser": "^3.90.0" },

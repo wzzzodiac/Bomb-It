@@ -1,6 +1,5 @@
 export const TILE = 40;
-export const COLS = 13;
-export const ROWS = 11;
+export const DEFAULT_ARENA = { cols: 17, rows: 13 } as const;
 export const FUSE_MS = 2000;
 export const FLAME_MS = 450;
 export type Point = { x: number; y: number };

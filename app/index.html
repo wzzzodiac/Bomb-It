@@ -2,69 +2,101 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#071015" />
-    <meta name="description" content="Bomb-It, a browser bomber experiment by W.ZC." />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1323" />
+    <meta name="description" content="Bomb-It, a mobile-first browser bomber game by W.ZC." />
     <link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/46037018?v=4" />
     <title>Bomb-It | W.ZC</title>
   </head>
-  <body>
-    <aside class="sidebar" aria-label="Main navigation">
-      <div class="sidebar-profile">
-        <a href="https://github.com/wzzzodiac" target="_blank" rel="noreferrer" class="sidebar-photo-link" aria-label="Open GitHub profile">
-          <img class="sidebar-photo" src="https://avatars.githubusercontent.com/u/46037018?s=400&u=794e01b6bf68c90c20112760090bd295675f571a&v=4" alt="W.ZC profile picture" />
-        </a>
-        <div class="sidebar-photo-note">my profile</div>
-      </div>
-      <nav class="menu">
-        <a class="menu-item" href="https://wzzzodiac.github.io/"><span class="icon">⌂</span><span class="label">home</span></a>
-        <a class="menu-item active" href="https://wzzzodiac.github.io/projects.html"><span class="icon">⌘</span><span class="label">projects</span></a>
-        <a class="menu-item" href="https://wzzzodiac.github.io/field-notes.html"><span class="icon">▤</span><span class="label">field notes</span></a>
-        <a class="menu-item" href="https://wzzzodiac.github.io/contact.html"><span class="icon">✉</span><span class="label">contact</span></a>
+  <body data-screen="profile">
+    <aside class="hub-sidebar" aria-label="W.ZC navigation">
+      <a class="hub-profile" href="https://github.com/wzzzodiac" target="_blank" rel="noreferrer" aria-label="Open W.ZC GitHub profile">
+        <img src="https://avatars.githubusercontent.com/u/46037018?s=200&amp;v=4" alt="W.ZC profile" />
+      </a>
+      <nav>
+        <a href="https://wzzzodiac.github.io/" aria-label="Home">⌂ <span>home</span></a>
+        <a class="active" href="https://wzzzodiac.github.io/projects.html" aria-label="Projects">⌘ <span>projects</span></a>
+        <a href="https://wzzzodiac.github.io/field-notes.html" aria-label="Field notes">▤ <span>field notes</span></a>
+        <a href="https://wzzzodiac.github.io/contact.html" aria-label="Contact">✉ <span>contact</span></a>
       </nav>
-      <div class="sidebar-footer">v0.50<br />github pages</div>
+      <small>v0.50<br />github pages</small>
     </aside>
-
-    <main class="main">
-      <header class="project-header">
-        <a class="back-link" href="https://wzzzodiac.github.io/projects.html">← project index</a>
-        <span class="lab-note">LAB NOTE 011</span>
-        <p class="eyebrow">GAME / BOMBER / PLAYABLE MVP</p>
-        <div class="title-row">
-          <div>
-            <h1>Bomb-It</h1>
-            <p class="project-description">Bomberman-style arena combat. Clear the crates, steal the upgrades, and introduce the rival to basic explosive diplomacy.</p>
-          </div>
-          <span class="mode-pill"><span class="live-dot"></span> SOLO MATCH</span>
-        </div>
-        <div class="project-badges">
-          <span>browser game</span>
-          <span>keyboard + touch</span>
-          <span>computer rival</span>
-        </div>
-      </header>
-
-      <section class="game-section" aria-label="Bomb-It playable experiment">
-        <div class="experiment-label">PLAYABLE EXPERIMENT</div>
-        <div class="game-panel">
-          <div class="arena-top"><span class="arena-label">ARENA <strong>01</strong></span><div id="stats" class="stats" aria-live="polite">Bombs 1 · Fire 2</div></div>
-          <div class="arena-frame"><div id="game" aria-label="Bomb-It game arena"></div></div>
-          <div class="controls" aria-label="Touch game controls">
-            <div class="dpad">
-              <button class="up" data-direction="up" aria-label="Move up">▲</button>
-              <button class="left" data-direction="left" aria-label="Move left">◀</button>
-              <button class="down" data-direction="down" aria-label="Move down">▼</button>
-              <button class="right" data-direction="right" aria-label="Move right">▶</button>
-            </div>
-            <button class="bomb-button" id="bomb-button" aria-label="Place bomb">BOMB</button>
-          </div>
-          <p class="hint"><span>CONTROLS</span> WASD / arrows to move <i>•</i> Space to bomb</p>
+    <main id="app" class="app-shell">
+      <section class="app-screen profile-screen" data-view="profile" aria-labelledby="profile-title">
+        <div class="menu-card compact-card">
+          <span class="eyebrow">LOCAL PLAYER PROFILE</span>
+          <h1 id="profile-title"><span class="title-mark">✦</span> Bomb-It</h1>
+          <p>Pick the name your friends will see in the arena.</p>
+          <form id="profile-form">
+            <label for="nickname">Nickname</label>
+            <input id="nickname" name="nickname" maxlength="18" autocomplete="nickname" placeholder="Player name" required />
+            <p id="profile-error" class="form-error" aria-live="polite"></p>
+            <button class="primary-button" type="submit">Continue</button>
+          </form>
         </div>
       </section>
 
-      <div id="result" class="result hidden" role="dialog" aria-modal="true" aria-labelledby="result-title">
-        <div class="result-card"><span class="eyebrow">MATCH COMPLETE</span><h2 id="result-title"></h2><p>Ready for another round?</p><button id="restart">↻ &nbsp; Play again</button></div>
-      </div>
+      <section class="app-screen home-screen" data-view="home" aria-labelledby="home-title" hidden>
+        <div class="menu-card hero-card">
+          <span class="eyebrow">MOBILE BATTLE ARENA</span>
+          <h1 id="home-title"><span class="title-mark">✦</span> Bomb-It</h1>
+          <p class="tagline">Blast the crates. Outlast every rival.</p>
+          <div class="profile-chip">Playing as <strong id="home-nickname"></strong> <button id="edit-profile" class="text-button">Change</button></div>
+          <div class="menu-actions">
+            <button id="quick-play" class="primary-button jumbo-button">▶ Quick Play</button>
+            <button id="create-room" class="secondary-button">Create Local Room</button>
+            <button id="join-room" class="secondary-button">Join Room</button>
+          </div>
+          <p id="home-notice" class="menu-notice" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="app-screen lobby-screen" data-view="lobby" aria-labelledby="lobby-title" hidden>
+        <div class="menu-card lobby-card">
+          <div class="lobby-heading"><div><span class="eyebrow">LOCAL ROOM</span><h1 id="lobby-title">ROOM <span id="room-code"></span></h1></div><span class="local-pill">LOCAL ONLY</span></div>
+          <p>Add up to five bots. This room model is ready for a future server, but no network connection is being simulated.</p>
+          <ol id="slots" class="slot-list" aria-label="Room player slots"></ol>
+          <div class="lobby-actions">
+            <button id="add-bot" class="secondary-button">+ Add Bot</button>
+            <button id="start-match" class="primary-button">Start Match</button>
+          </div>
+          <button id="lobby-home" class="text-button back-button">← Home</button>
+        </div>
+      </section>
+
+      <section class="app-screen match-screen" data-view="playing" aria-label="Active match" hidden>
+        <div class="rotate-hint" role="status"><span>↻</span><strong>Rotate for the best view</strong><small>Portrait still works if rotation is unavailable.</small></div>
+        <div class="match-layout">
+          <header class="match-hud">
+            <span>ROOM <strong id="match-room"></strong></span>
+            <span id="match-player"></span>
+            <span><strong id="alive-count">1 / 1</strong> ALIVE</span>
+            <span>B <strong id="bomb-count">1</strong> · F <strong id="fire-count">2</strong></span>
+          </header>
+          <div class="arena-frame"><div id="game" aria-label="Bomb-It game arena"></div></div>
+          <div class="controls" aria-label="Touch game controls">
+            <div class="dpad" aria-label="Movement pad">
+              <button class="up" data-direction="up" aria-label="Move up">▲</button>
+              <button class="left" data-direction="left" aria-label="Move left">◀</button>
+              <span class="dpad-center">+</span>
+              <button class="right" data-direction="right" aria-label="Move right">▶</button>
+              <button class="down" data-direction="down" aria-label="Move down">▼</button>
+            </div>
+            <button class="bomb-button" id="bomb-button" aria-label="Place bomb">BOMB</button>
+          </div>
+          <p class="desktop-hint"><span>WASD / arrows</span> move <i>•</i> <span>Space</span> bomb</p>
+        </div>
+      </section>
+
+      <section class="app-screen results-screen" data-view="results" aria-labelledby="result-title" hidden>
+        <div class="menu-card result-card">
+          <span class="eyebrow">ROUND COMPLETE</span>
+          <h1 id="result-title"></h1>
+          <p id="result-summary"></p>
+          <ul id="result-statuses" class="result-statuses"></ul>
+          <div class="menu-actions"><button id="play-again" class="primary-button">Play Again</button><button id="back-lobby" class="secondary-button">Back to Lobby</button></div>
+        </div>
+      </section>
     </main>
     <script type="module" src="../src/main.ts"></script>
   </body>
