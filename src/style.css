@@ -250,6 +250,8 @@ body[data-screen=playing] .app-shell{margin-left:0}
 }
 .match-hud strong{color:var(--accent)}
 .arena-frame{
+  --arena-aspect:17 / 13;
+  --arena-ratio:1.3076923077;
   min-height:0;
   display:grid;
   place-items:center;
@@ -276,7 +278,7 @@ body[data-screen=playing] .app-shell{margin-left:0}
   height:100%;
   width:auto;
   max-width:100%;
-  aspect-ratio:17/13;
+  aspect-ratio:var(--arena-aspect);
   overflow:hidden;
   border:1px solid var(--line-soft);
   border-radius:0;
@@ -352,7 +354,7 @@ body[data-screen=playing] .app-shell{margin-left:0}
 }
 @media(pointer:fine) and (min-width:761px){
   .match-layout{max-width:850px}
-  .arena-frame{margin:auto;width:min(100%,805px,calc((100dvh - 96px) * 17 / 13))}
+  .arena-frame{margin:auto;width:min(100%,805px,calc((100dvh - 96px) * var(--arena-ratio)))}
   #game{width:100%;height:auto}
 }
 @media(orientation:landscape) and (max-height:520px){

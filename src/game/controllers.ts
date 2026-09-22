@@ -4,9 +4,12 @@ import type { PlayerId } from './players.ts';
 
 export type ControllerHost = {
   movePlayer(id: PlayerId, direction: Direction): boolean;
-  placePlayerBomb(id: PlayerId): void;
+  placePlayerBomb(id: PlayerId): boolean;
   availableMoves(id: PlayerId): Array<{ direction: Direction; point: Point }>;
   isDangerous(point: Point): boolean;
+  isPlayerDangerous(id: PlayerId): boolean;
+  escapeDirection(id: PlayerId): Direction | null;
+  canSafelyPlaceBomb(id: PlayerId): boolean;
 };
 
 export interface PlayerController { update(time: number): void; }
@@ -35,14 +38,20 @@ export class BotController implements PlayerController {
   constructor(private readonly id: PlayerId, private readonly host: ControllerHost) {}
   update(time: number): void {
     if (time >= this.nextMove) {
-      const options = this.host.availableMoves(this.id);
-      const safe = options.filter(option => !this.host.isDangerous(option.point));
-      const choice = Phaser.Utils.Array.GetRandom(safe.length ? safe : options);
-      if (choice) this.host.movePlayer(this.id, choice.direction);
+      const escape = this.host.escapeDirection(this.id);
+      if (escape) this.host.movePlayer(this.id, escape);
+      else {
+        const options = this.host.availableMoves(this.id);
+        const safe = options.filter(option => !this.host.isDangerous(option.point));
+        const choice = Phaser.Utils.Array.GetRandom(safe.length ? safe : options);
+        if (choice) this.host.movePlayer(this.id, choice.direction);
+      }
       this.nextMove = time + 240 + Math.random() * 140;
     }
     if (time >= this.nextBomb) {
-      if (Math.random() < 0.52) this.host.placePlayerBomb(this.id);
+      if (!this.host.isPlayerDangerous(this.id) && this.host.canSafelyPlaceBomb(this.id) && Math.random() < 0.52) {
+        if (this.host.placePlayerBomb(this.id)) this.nextMove = Math.min(this.nextMove, time + 120);
+      }
       this.nextBomb = time + 1700 + Math.random() * 1700;
     }
   }

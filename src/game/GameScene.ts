@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { allocateSpawns, blastTiles, createArena, tileAt, type Arena } from './arena.ts';
+import { canEscapeBomb, findEscapeDirection, type BombThreat } from './botLogic.ts';
 import { BotController, LocalController, RemoteController, type ControllerHost, type PlayerController } from './controllers.ts';
-import { DEFAULT_ARENA, DIRECTIONS, FLAME_MS, FUSE_MS, TILE, VECTORS, key, type Direction, type Point } from './config.ts';
+import { DIRECTIONS, FLAME_MS, FUSE_MS, TILE, VECTORS, key, type ArenaSize, type Direction, type Point } from './config.ts';
 import { evaluateMatch } from './matchRules.ts';
 import { canPlaceBomb, claimBomb, releaseBomb, type PlayerId, type PlayerState } from './players.ts';
 import type { Participant, RoundResult } from '../app/state.ts';
@@ -9,7 +10,7 @@ import type { Participant, RoundResult } from '../app/state.ts';
 type Bomb = { position: Point; ownerId: PlayerId; range: number; body: Phaser.GameObjects.Container; timer: Phaser.Time.TimerEvent; exploded: boolean };
 type PowerUp = { kind: 'bomb' | 'fire'; body: Phaser.GameObjects.Container };
 export type MatchHud = { alive: number; total: number; localName: string; bombs: number; fire: number };
-export type MatchOptions = { participants: Participant[]; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void };
+export type MatchOptions = { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void };
 
 const COLORS = [0x56dcb4, 0xf17a88, 0x7ca8ff, 0xffca67, 0xc987f2, 0x75d9f0];
 
@@ -33,7 +34,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   constructor(private readonly options: MatchOptions) { super('Game'); }
 
   create(): void {
-    const { cols, rows } = DEFAULT_ARENA;
+    const { cols, rows } = this.options.arenaSize;
     const participants = this.options.participants.slice(0, 6);
     const spawns = allocateSpawns(participants.length, cols, rows);
     this.arena = createArena({ cols, rows, playerCount: participants.length });
@@ -79,9 +80,9 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     return true;
   }
 
-  placePlayerBomb(id: PlayerId): void {
+  placePlayerBomb(id: PlayerId): boolean {
     const owner = this.players.get(id);
-    if (!owner || !canPlaceBomb(owner) || this.bombs.has(key(owner.position))) return;
+    if (!owner || !canPlaceBomb(owner) || this.bombs.has(key(owner.position))) return false;
     const position = { ...owner.position };
     const body = this.add.container(position.x * TILE + TILE / 2, position.y * TILE + TILE / 2).setDepth(3);
     body.add([this.add.ellipse(0, 12, 29, 8, 0x071322, 0.65), this.add.circle(0, 1, 13, 0x172434).setStrokeStyle(3, 0xd3dee6), this.add.circle(-4, -5, 4, 0xffffff, 0.3), this.add.rectangle(2, -14, 4, 7, 0xffd166)]);
@@ -91,6 +92,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     const pulse = this.add.circle(body.x, body.y, 17, 0xffd166, 0).setStrokeStyle(3, 0xffd166).setDepth(6);
     this.tweens.add({ targets: pulse, scale: 1.6, alpha: 0, duration: 360, onComplete: () => pulse.destroy() });
     this.updateHud();
+    return true;
   }
 
   availableMoves(id: PlayerId): Array<{ direction: Direction; point: Point }> {
@@ -100,7 +102,25 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
 
   isDangerous(point: Point): boolean {
     if (this.flames.has(key(point))) return true;
-    return [...this.bombs.values()].some(bomb => blastTiles(this.arena, bomb.position, bomb.range).some(tile => key(tile) === key(point)));
+    return this.bombThreats().some(bomb => blastTiles(this.arena, bomb.position, bomb.range).some(tile => key(tile) === key(point)));
+  }
+
+  isPlayerDangerous(id: PlayerId): boolean {
+    const player = this.players.get(id);
+    return player ? this.isDangerous(player.position) : false;
+  }
+
+  escapeDirection(id: PlayerId): Direction | null {
+    const player = this.players.get(id);
+    if (!player?.alive) return null;
+    return findEscapeDirection(this.arena, player.position, this.bombThreats(), this.blockedTiles(id), this.escapeSearchDepth());
+  }
+
+  canSafelyPlaceBomb(id: PlayerId): boolean {
+    const player = this.players.get(id);
+    if (!player?.alive || !canPlaceBomb(player) || this.bombs.has(key(player.position))) return false;
+    const hypothetical = [...this.bombThreats(), { position: player.position, range: player.fireRange }];
+    return canEscapeBomb(this.arena, player.position, hypothetical, this.blockedTiles(id), player.fireRange + 3);
   }
 
   private drawArena(): void {
@@ -137,6 +157,20 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   private step(point: Point, direction: Direction): Point { return { x: point.x + VECTORS[direction].x, y: point.y + VECTORS[direction].y }; }
   private walkable(point: Point, movingId: PlayerId): boolean {
     return tileAt(this.arena, point) === 'floor' && !this.bombs.has(key(point)) && ![...this.players.values()].some(player => player.id !== movingId && player.alive && key(player.position) === key(point));
+  }
+
+  private bombThreats(): BombThreat[] {
+    return [...this.bombs.values()].map(({ position, range }) => ({ position, range }));
+  }
+  private blockedTiles(movingId: PlayerId): Set<string> {
+    return new Set([
+      ...this.bombs.keys(),
+      ...this.flames,
+      ...[...this.players.values()].filter(player => player.id !== movingId && player.alive).map(player => key(player.position))
+    ]);
+  }
+  private escapeSearchDepth(): number {
+    return Math.min(12, Math.max(5, ...this.bombThreats().map(bomb => bomb.range + 3)));
   }
 
   private explode(bomb: Bomb): void {

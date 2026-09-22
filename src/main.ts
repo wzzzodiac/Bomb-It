@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { addBot, createLocalRoom, MAX_PLAYERS_PER_ROOM, normalizeNickname, removeBot, type AppScreen, type RoomState, type RoundResult } from './app/state.ts';
-import { DEFAULT_ARENA, TILE, type Direction } from './game/config.ts';
+import { getArenaSizeForPlayerCount, TILE, type Direction } from './game/config.ts';
 import { GameScene, type MatchHud } from './game/GameScene.ts';
 import './style.css';
 
@@ -85,8 +85,14 @@ class BombItApp {
     if (!this.room) this.room = createLocalRoom(this.nickname);
     this.destroyGame(); this.show('playing');
     this.byId('match-room').textContent = this.room.code;
-    this.scene = new GameScene({ participants: this.room.participants, onHud: hud => this.renderHud(hud), onResult: result => this.showResult(result) });
-    this.game = new Phaser.Game({ type: Phaser.AUTO, parent: 'game', backgroundColor: '#223b52', width: DEFAULT_ARENA.cols * TILE, height: DEFAULT_ARENA.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
+    const arenaSize = getArenaSizeForPlayerCount(this.room.participants.length);
+    const gameElement = this.byId('game');
+    const arenaFrame = gameElement.closest<HTMLElement>('.arena-frame');
+    if (!arenaFrame) throw new Error('Missing arena frame');
+    arenaFrame.style.setProperty('--arena-aspect', `${arenaSize.cols} / ${arenaSize.rows}`);
+    arenaFrame.style.setProperty('--arena-ratio', String(arenaSize.cols / arenaSize.rows));
+    this.scene = new GameScene({ participants: this.room.participants, arenaSize, onHud: hud => this.renderHud(hud), onResult: result => this.showResult(result) });
+    this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#223b52', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
   }
 
   private renderHud(hud: MatchHud): void {

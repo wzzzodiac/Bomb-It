@@ -1,5 +1,19 @@
 export const TILE = 40;
-export const DEFAULT_ARENA = { cols: 17, rows: 13 } as const;
+export type ArenaSize = { cols: number; rows: number };
+export const ARENA_PRESETS = {
+  small: { cols: 17, rows: 13 },
+  medium: { cols: 21, rows: 17 },
+  large: { cols: 25, rows: 19 }
+} as const satisfies Record<string, ArenaSize>;
+
+export function getArenaSizeForPlayerCount(playerCount: number): ArenaSize {
+  if (!Number.isInteger(playerCount) || playerCount < 1 || playerCount > 6) {
+    throw new Error('playerCount must be between 1 and 6');
+  }
+  if (playerCount <= 2) return ARENA_PRESETS.small;
+  if (playerCount <= 4) return ARENA_PRESETS.medium;
+  return ARENA_PRESETS.large;
+}
 export const FUSE_MS = 2000;
 export const FLAME_MS = 450;
 export type Point = { x: number; y: number };
