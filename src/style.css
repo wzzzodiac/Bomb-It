@@ -228,6 +228,7 @@ body[data-screen=playing] .app-shell{margin-left:0}
 }
 .match-layout{
   height:100%;
+  width:100%;
   max-width:980px;
   margin:0 auto;
   display:grid;
@@ -350,21 +351,25 @@ body[data-screen=playing] .app-shell{margin-left:0}
   .desktop-hint{display:none}
 }
 @media(pointer:fine) and (min-width:761px){
-  .match-layout{max-width:740px}
-  .arena-frame{margin:auto;width:min(100%,700px)}
+  .match-layout{max-width:850px}
+  .arena-frame{margin:auto;width:min(100%,805px,calc((100dvh - 96px) * 17 / 13))}
   #game{width:100%;height:auto}
 }
 @media(orientation:landscape) and (max-height:520px){
   .match-screen{padding-top:max(3px,env(safe-area-inset-top));padding-bottom:max(3px,env(safe-area-inset-bottom))}
-  .match-layout{grid-template-columns:minmax(0,1fr) 220px;grid-template-rows:28px minmax(0,1fr);gap:4px}
+  .match-layout{grid-template-columns:minmax(0,1fr) clamp(250px,34vw,288px);grid-template-rows:28px minmax(0,1fr);gap:6px}
   .match-hud{grid-column:1/-1;min-height:26px;font-size:9px}
   .arena-frame{grid-column:1;grid-row:2;margin:0;width:100%;height:100%}
   #game{width:auto;height:100%}
-  .controls{display:flex;grid-column:2;grid-row:2;min-height:0;padding:2px 4px;gap:8px}
-  .dpad{grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,34px)}
-  .dpad button{min-width:42px;min-height:34px}
-  .bomb-button{width:72px;height:72px}
+  .controls{display:flex;grid-column:2;grid-row:2;min-height:0;padding:2px max(6px,env(safe-area-inset-right)) 2px max(6px,env(safe-area-inset-left));gap:10px}
+  .dpad{grid-template-columns:repeat(3,clamp(46px,6vw,52px));grid-template-rows:repeat(3,clamp(38px,5vw,44px))}
+  .dpad button{min-width:clamp(46px,6vw,52px);min-height:clamp(38px,5vw,44px)}
+  .bomb-button{width:clamp(86px,11vw,98px);height:clamp(86px,11vw,98px)}
   .desktop-hint{display:none}
+}
+@media(orientation:portrait){
+  .arena-frame{height:auto;align-self:center}
+  #game{width:100%;height:auto}
 }
 @media(orientation:portrait) and (pointer:coarse){
   .rotate-hint{
@@ -384,8 +389,7 @@ body[data-screen=playing] .app-shell{margin-left:0}
   .rotate-hint span{font-size:22px}
   .rotate-hint small{color:#b9a975}
   .match-layout{height:calc(100% - 50px)}
-  .controls{min-height:122px}
-  .dpad{transform:scale(.88);transform-origin:left center}
+  .controls{min-height:150px}
 }
 @media(max-width:430px){
   .app-screen:not(.match-screen){padding:12px}
@@ -393,8 +397,8 @@ body[data-screen=playing] .app-shell{margin-left:0}
   .lobby-actions{grid-template-columns:1fr}
   .slot-role{font-size:8px}
   .match-hud{gap:7px;font-size:8px}
-  .controls{padding-inline:5px}
-  .bomb-button{width:86px;height:86px}
-  .dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,40px)}
-  .dpad button{min-width:48px;min-height:40px}
+  .controls{padding-inline:max(6px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-right))}
+  .bomb-button{width:106px;height:106px}
+  .dpad{grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,46px)}
+  .dpad button{min-width:56px;min-height:46px}
 }
