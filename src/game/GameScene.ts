@@ -156,7 +156,8 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   }
 
   private createOnline(): void {
-    const online = this.options.online!;
+    const online = this.options.online;
+    if (!online) throw new Error('Online match options are required.');
     this.arena = online.initial.arena.tiles;
     this.onlineRevision = online.initial.revision;
     this.players.clear(); this.views.clear(); this.controllers.clear(); this.bombs.clear(); this.flames.clear(); this.powerUps.clear();
