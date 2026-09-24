@@ -2,7 +2,7 @@ import type { ControllerKind } from '../game/players.ts';
 
 export const MAX_PLAYERS_PER_ROOM = 6;
 export const FUTURE_MAX_ROOMS = 5;
-export type AppScreen = 'profile' | 'home' | 'lobby' | 'playing' | 'results';
+export type AppScreen = 'profile' | 'home' | 'lobby' | 'online' | 'online-lobby' | 'playing' | 'results';
 export type Participant = { id: string; name: string; controller: ControllerKind; ready: boolean; host: boolean };
 export type RoomState = { code: string; participants: Participant[] };
 export type RoundResult = { kind: 'winner' | 'draw'; winnerId?: string; winnerName?: string; statuses: Array<{ id: string; name: string; alive: boolean }> };

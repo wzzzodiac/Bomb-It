@@ -9,6 +9,13 @@
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "build": "tsc --noEmit && vite build && node scripts/sync-pages.mjs"
   },
-  "dependencies": { "phaser": "^3.90.0" },
-  "devDependencies": { "@types/node": "^24.3.0", "typescript": "^5.9.3", "vite": "^7.1.0" }
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0"
+  }
 }

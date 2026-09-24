@@ -33,9 +33,34 @@
           <div class="menu-actions">
             <button id="quick-play" class="primary-button jumbo-button">▶ Quick Play</button>
             <button id="create-room" class="secondary-button">Create Local Room</button>
-            <button id="join-room" class="secondary-button">Join Room</button>
+            <button id="online-home" class="secondary-button">Online</button>
           </div>
           <p id="home-notice" class="menu-notice" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="app-screen" data-view="online" aria-labelledby="online-title" hidden>
+        <div class="menu-card compact-card">
+          <span class="eyebrow">LOCAL SERVER MULTIPLAYER</span>
+          <h1 id="online-title">Online</h1>
+          <p>Create a room or enter a friend's code. The server must be running.</p>
+          <div class="menu-actions"><button id="online-create" class="primary-button">Create Room</button></div>
+          <label for="online-code">Room code</label>
+          <input id="online-code" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABCD" />
+          <div class="menu-actions"><button id="online-join" class="secondary-button">Join Room</button></div>
+          <p id="online-notice" class="form-error" role="status" aria-live="polite"></p>
+          <button id="online-home-back" class="text-button back-button">← Home</button>
+        </div>
+      </section>
+
+      <section class="app-screen" data-view="online-lobby" aria-labelledby="online-lobby-title" hidden>
+        <div class="menu-card lobby-card">
+          <div class="lobby-heading"><div><span class="eyebrow">ONLINE ROOM</span><h1 id="online-lobby-title">ROOM <span id="online-room-code"></span></h1></div><span class="local-pill">SERVER</span></div>
+          <p id="online-room-status"></p>
+          <ol id="online-slots" class="slot-list" aria-label="Online room players"></ol>
+          <div class="lobby-actions"><button id="online-ready" class="secondary-button">Ready</button><button id="online-start" class="primary-button">Start Match</button></div>
+          <p id="online-lobby-notice" class="form-error" role="status" aria-live="polite"></p>
+          <button id="online-leave" class="text-button back-button">← Leave Room</button>
         </div>
       </section>
 
@@ -59,7 +84,8 @@
             <span>ROOM <strong id="match-room"></strong></span>
             <span id="match-player"></span>
             <span><strong id="alive-count">1 / 1</strong> ALIVE</span>
-            <span>B <strong id="bomb-count">1</strong> · F <strong id="fire-count">2</strong></span>
+            <span id="match-powerups">B <strong id="bomb-count">1</strong> · F <strong id="fire-count">2</strong></span>
+            <button id="match-leave" class="text-button" hidden>Leave</button>
           </header>
           <div class="arena-frame"><div id="game" aria-label="Bomb-It game arena"></div></div>
           <div class="controls" aria-label="Touch game controls">
@@ -72,7 +98,8 @@
             </div>
             <button class="bomb-button" id="bomb-button" aria-label="Place bomb">BOMB</button>
           </div>
-          <p class="desktop-hint"><span>WASD / arrows</span> move <i>•</i> <span>Space</span> bomb</p>
+          <p class="desktop-hint" id="match-hint"><span>WASD / arrows</span> move <i>•</i> <span>Space</span> bomb</p>
+          <p id="match-notice" class="match-notice" role="status" aria-live="polite" hidden></p>
         </div>
       </section>
 

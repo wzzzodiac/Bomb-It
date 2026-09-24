@@ -6,11 +6,14 @@ import { DIRECTIONS, FLAME_MS, FUSE_MS, TILE, VECTORS, key, type ArenaSize, type
 import { evaluateMatch } from './matchRules.ts';
 import { canPlaceBomb, claimBomb, releaseBomb, type PlayerId, type PlayerState } from './players.ts';
 import type { Participant, RoundResult } from '../app/state.ts';
+import type { InitialMatchState, MatchState } from '../network/types.ts';
 
 type Bomb = { position: Point; ownerId: PlayerId; range: number; body: Phaser.GameObjects.Container; timer: Phaser.Time.TimerEvent; exploded: boolean };
 type PowerUp = { kind: 'bomb' | 'fire'; body: Phaser.GameObjects.Container };
 export type MatchHud = { alive: number; total: number; localName: string; bombs: number; fire: number };
-export type MatchOptions = { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void };
+export type MatchOptions =
+  | { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void; online?: never }
+  | { arenaSize: ArenaSize; onHud: (hud: MatchHud) => void; online: { initial: InitialMatchState; selfPlayerId: string; sendDirection: (direction: Direction) => void }; participants?: never; onResult?: never };
 
 const COLORS = [0x56dcb4, 0xf17a88, 0x7ca8ff, 0xffca67, 0xc987f2, 0x75d9f0];
 
@@ -30,10 +33,13 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   private touchDirection: Direction | null = null;
   private bombQueued = false;
   private finished = false;
+  private onlineRevision = -1;
+  private lastOnlineInput = -135;
 
   constructor(private readonly options: MatchOptions) { super('Game'); }
 
   create(): void {
+    if (this.options.online) { this.createOnline(); return; }
     const { cols, rows } = this.options.arenaSize;
     const participants = this.options.participants.slice(0, 6);
     const spawns = allocateSpawns(participants.length, cols, rows);
@@ -45,11 +51,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
       const player: PlayerState = { id: participant.id, name: participant.name, position: spawns[index], alive: true, bombCapacity: 1, fireRange: 2, activeBombs: 0, controller: participant.controller, color: COLORS[index] };
       this.players.set(player.id, player); this.views.set(player.id, this.createPlayerView(player));
     });
-    const keyboard = this.input.keyboard!;
-    this.cursors = keyboard.createCursorKeys();
-    this.wasd = keyboard.addKeys('W,A,S,D') as typeof this.wasd;
-    this.space = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    keyboard.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT']);
+    this.createKeyboard();
     for (const player of this.players.values()) {
       const controller = player.controller === 'local'
         ? new LocalController(player.id, this, () => this.localDirection(), () => this.consumeBombRequest())
@@ -61,14 +63,23 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
 
   update(time: number): void {
     if (this.finished) return;
+    if (this.options.online) {
+      const direction = this.localDirection();
+      if (direction && time - this.lastOnlineInput >= 135) {
+        this.lastOnlineInput = time;
+        this.options.online.sendDirection(direction);
+      }
+      return;
+    }
     if (Phaser.Input.Keyboard.JustDown(this.space)) this.bombQueued = true;
     for (const controller of this.controllers.values()) controller.update(time);
   }
 
   setTouchDirection(direction: Direction | null): void { this.touchDirection = direction; }
-  queueLocalBomb(): void { if (!this.finished) this.bombQueued = true; }
+  queueLocalBomb(): void { if (!this.finished && !this.options.online) this.bombQueued = true; }
 
   movePlayer(id: PlayerId, direction: Direction): boolean {
+    if (this.options.online) return false;
     const player = this.players.get(id); if (!player?.alive) return false;
     const next = this.step(player.position, direction);
     if (!this.walkable(next, id)) return false;
@@ -81,6 +92,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   }
 
   placePlayerBomb(id: PlayerId): boolean {
+    if (this.options.online) return false;
     const owner = this.players.get(id);
     if (!owner || !canPlaceBomb(owner) || this.bombs.has(key(owner.position))) return false;
     const position = { ...owner.position };
@@ -133,6 +145,51 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
         this.tileDetails[y][x] = this.drawTileDetail(x, y, tile);
       }
     }
+  }
+
+  private createKeyboard(): void {
+    const keyboard = this.input.keyboard!;
+    this.cursors = keyboard.createCursorKeys();
+    this.wasd = keyboard.addKeys('W,A,S,D') as typeof this.wasd;
+    this.space = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    keyboard.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT']);
+  }
+
+  private createOnline(): void {
+    const online = this.options.online!;
+    this.arena = online.initial.arena.tiles;
+    this.onlineRevision = online.initial.revision;
+    this.players.clear(); this.views.clear(); this.controllers.clear(); this.bombs.clear(); this.flames.clear(); this.powerUps.clear();
+    this.touchDirection = null; this.bombQueued = false; this.finished = false;
+    this.drawArena();
+    this.createKeyboard();
+    this.applyOnlinePlayers(online.initial.players);
+  }
+
+  applyOnlineState(state: MatchState): void {
+    if (!this.options.online || state.roomCode !== this.options.online.initial.roomCode || state.revision <= this.onlineRevision) return;
+    this.onlineRevision = state.revision;
+    this.applyOnlinePlayers(state.players);
+  }
+
+  private applyOnlinePlayers(incoming: MatchState['players']): void {
+    const selfId = this.options.online?.selfPlayerId;
+    incoming.forEach((entry, index) => {
+      let player = this.players.get(entry.id);
+      if (!player) {
+        player = { ...entry, position: { ...entry.position }, controller: entry.id === selfId ? 'local' : 'remote', color: COLORS[index % COLORS.length] };
+        this.players.set(entry.id, player);
+        this.views.set(entry.id, this.createPlayerView(player));
+      } else {
+        if (player.position.x !== entry.position.x || player.position.y !== entry.position.y) {
+          this.tweens.add({ targets: this.views.get(entry.id), x: entry.position.x * TILE + TILE / 2, y: entry.position.y * TILE + TILE / 2, duration: 105, ease: 'Sine.easeOut' });
+        }
+        Object.assign(player, entry, { position: { ...entry.position } });
+      }
+      this.views.get(entry.id)?.setAlpha(entry.alive ? 1 : 0.28);
+    });
+    for (const id of this.players.keys()) if (!incoming.some(player => player.id === id)) { this.views.get(id)?.destroy(); this.views.delete(id); this.players.delete(id); }
+    this.updateHud();
   }
 
   private tileColor(tile: string, x: number, y: number): number { return tile === 'wall' ? 0x5a728e : tile === 'crate' ? 0x975c3f : (x + y) % 2 ? 0x253d53 : 0x2b455a; }
@@ -211,10 +268,12 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     this.options.onHud({ alive: [...this.players.values()].filter(player => player.alive).length, total: this.players.size, localName: local?.name ?? 'Player', bombs: local?.bombCapacity ?? 1, fire: local?.fireRange ?? 2 });
   }
   private resolveResult(): void {
+    if (this.options.online) return;
+    const onResult = this.options.onResult;
     const result = evaluateMatch(this.players.values()); if (result.status === 'ongoing' || this.finished) return;
     this.finished = true;
     const winner = result.status === 'winner' ? this.players.get(result.winnerId) : undefined;
     const payload: RoundResult = { kind: result.status === 'winner' ? 'winner' : 'draw', winnerId: winner?.id, winnerName: winner?.name, statuses: [...this.players.values()].map(player => ({ id: player.id, name: player.name, alive: player.alive })) };
-    this.time.delayedCall(FLAME_MS, () => this.options.onResult(payload));
+    this.time.delayedCall(FLAME_MS, () => onResult(payload));
   }
 }
