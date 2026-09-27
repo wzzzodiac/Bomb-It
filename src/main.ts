@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
+import matchMusicUrl from './assets/bombit.mp3?url';
+import { MatchMusic } from './audio/MatchMusic.ts';
 import { addBot, createLocalRoom, MAX_PLAYERS_PER_ROOM, normalizeNickname, removeBot, type AppScreen, type RoomState, type RoundResult } from './app/state.ts';
 import { getArenaSizeForPlayerCount, TILE, type Direction } from './game/config.ts';
 import { GameScene, type MatchHud } from './game/GameScene.ts';
 import { OnlineClient } from './network/client.ts';
 import { resolveServerUrl } from './network/config.ts';
 import { OnlineSession } from './network/session.ts';
-import type { InitialMatchState, MatchExplosion, MatchResult, MatchState, ServerError } from './network/types.ts';
+import type { InitialMatchState, MatchExplosion, MatchResult, MatchState, PublicRoomState, ServerError } from './network/types.ts';
 import './style.css';
 
 const PROFILE_KEY = 'bomb-it.nickname';
@@ -18,6 +20,7 @@ class BombItApp {
   private scene: GameScene | null = null;
   private activePointer: number | null = null;
   private readonly online = new OnlineSession();
+  private readonly music = new MatchMusic(matchMusicUrl);
   private onlineClient: OnlineClient | null = null;
 
   constructor() {
@@ -40,6 +43,11 @@ class BombItApp {
     this.byId('online-create').addEventListener('click', () => void this.enterOnline('create'));
     this.byId('online-join').addEventListener('click', () => void this.enterOnline('join'));
     this.byId('online-ready').addEventListener('click', () => void this.toggleOnlineReady());
+    this.byId('online-add-bot').addEventListener('click', () => void this.manageOnlineBot('add'));
+    this.byId('online-slots').addEventListener('click', event => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-online-bot]');
+      if (button?.dataset.removeOnlineBot) void this.manageOnlineBot('remove', button.dataset.removeOnlineBot);
+    });
     this.byId('online-start').addEventListener('click', () => void this.startOnline());
     this.byId('online-leave').addEventListener('click', () => void this.leaveOnline());
     this.byId('match-leave').addEventListener('click', () => void this.leaveOnline());
@@ -50,7 +58,7 @@ class BombItApp {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-bot]');
       if (button && this.room) { this.room = removeBot(this.room, button.dataset.removeBot!); this.renderLobby(); }
     });
-    this.byId('play-again').addEventListener('click', () => this.startMatch());
+    this.byId('play-again').addEventListener('click', () => { if (this.online.match) void this.returnToOnlineRoom(); else this.startMatch(); });
     this.byId('back-lobby').addEventListener('click', () => { if (this.online.match) void this.leaveOnline(); else this.show('lobby'); });
 
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-direction]')) {
@@ -68,6 +76,7 @@ class BombItApp {
   }
 
   private show(screen: AppScreen): void {
+    if (screen !== 'playing') this.music.stop();
     this.screen = screen; document.body.dataset.screen = screen;
     for (const view of document.querySelectorAll<HTMLElement>('[data-view]')) view.hidden = view.dataset.view !== screen;
     if (screen === 'profile') { const input = this.byId<HTMLInputElement>('nickname'); input.value = this.nickname; queueMicrotask(() => input.focus()); }
@@ -115,6 +124,7 @@ class BombItApp {
     arenaFrame.style.setProperty('--arena-ratio', String(arenaSize.cols / arenaSize.rows));
     this.scene = new GameScene({ participants: this.room.participants, arenaSize, onHud: hud => this.renderHud(hud), onResult: result => this.showResult(result) });
     this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#223b52', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
+    this.music.start();
   }
 
   private serverUrl(): string | null {
@@ -128,6 +138,7 @@ class BombItApp {
     this.onlineClient = new OnlineClient(url, {
       room: state => { if (this.online.selfPlayerId && state.code === this.online.room?.code) { this.online.room = state; if (this.screen === 'online-lobby') this.renderOnlineLobby(); } },
       left: code => { if (this.online.room?.code === code) this.finishOnlineLeave(); },
+      reset: state => this.onOnlineReset(state),
       error: error => this.showOnlineError(error),
       started: state => this.onOnlineStarted(state),
       match: state => this.onOnlineMatch(state),
@@ -162,14 +173,30 @@ class BombItApp {
       const number = document.createElement('span'); number.className = 'slot-number'; number.textContent = String(index + 1);
       const name = document.createElement('span'); name.className = 'slot-identity'; name.textContent = player.nickname;
       const role = document.createElement('span'); role.className = 'slot-role';
-      role.textContent = `${player.host ? 'HOST · ' : ''}${player.ready ? 'READY' : 'NOT READY'}${player.id === this.online.selfPlayerId ? ' · YOU' : ''}`;
-      item.append(number, name, role); slots.append(item);
+      role.textContent = `${player.host ? 'HOST · ' : ''}${player.kind === 'bot' ? 'BOT · ' : ''}${player.ready ? 'READY' : 'NOT READY'}${player.id === this.online.selfPlayerId ? ' · YOU' : ''}`;
+      item.append(number, name, role);
+      if (player.kind === 'bot' && room.hostPlayerId === this.online.selfPlayerId && room.status === 'lobby') {
+        const remove = document.createElement('button'); remove.className = 'remove-bot'; remove.dataset.removeOnlineBot = player.id;
+        remove.ariaLabel = `Remove ${player.nickname}`; remove.textContent = '×'; item.append(remove);
+      }
+      slots.append(item);
     }
     const self = room.players.find(player => player.id === this.online.selfPlayerId);
     this.byId('online-ready').textContent = self?.ready ? 'Unready' : 'Ready';
     this.byId<HTMLButtonElement>('online-ready').disabled = room.status !== 'lobby' || !self;
     this.byId<HTMLButtonElement>('online-start').disabled = !this.online.canStart();
     this.byId('online-start').hidden = room.hostPlayerId !== this.online.selfPlayerId;
+    this.byId<HTMLButtonElement>('online-add-bot').disabled = room.players.length >= MAX_PLAYERS_PER_ROOM || room.status !== 'lobby';
+    this.byId('online-add-bot').hidden = room.hostPlayerId !== this.online.selfPlayerId;
+  }
+
+  private async manageOnlineBot(action: 'add' | 'remove', botId?: string): Promise<void> {
+    if (!this.onlineClient || this.online.room?.hostPlayerId !== this.online.selfPlayerId || this.online.room.status !== 'lobby') return;
+    try {
+      const response = action === 'add' ? await this.onlineClient.addBot() : await this.onlineClient.removeBot(botId ?? '');
+      if (response.ok) { this.online.room = response.state; this.renderOnlineLobby(); }
+      else this.showOnlineError(response.error);
+    } catch { this.showOnlineError({ code: 'CONNECTION_ERROR', message: '' }); }
   }
 
   private async toggleOnlineReady(): Promise<void> {
@@ -210,10 +237,11 @@ class BombItApp {
     arenaFrame.style.setProperty('--arena-ratio', String(arenaSize.cols / arenaSize.rows));
     this.scene = new GameScene({ arenaSize, onHud: hud => this.renderHud(hud), online: {
       initial: state, selfPlayerId: this.online.selfPlayerId,
-      sendDirection: direction => this.online.sendDirection(direction, payload => this.onlineClient?.sendDirection(payload.direction)),
-      sendBomb: () => this.online.sendBomb(() => this.onlineClient?.placeBomb())
+      sendDirection: (direction, onAck) => this.online.sendDirection(direction, payload => this.onlineClient?.sendDirection(payload.direction, onAck)),
+      sendBomb: onAck => this.online.sendBomb(() => this.onlineClient?.placeBomb(onAck))
     } });
     this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#223b52', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
+    this.music.start();
   }
 
   private onOnlineMatch(state: MatchState): void {
@@ -226,14 +254,32 @@ class BombItApp {
 
   private onOnlineResult(result: MatchResult): void {
     if (!this.online.acceptResult(result)) return;
+    this.music.stop();
     window.setTimeout(() => {
       if (this.screen === 'playing' && this.online.match?.roomCode === result.roomCode) this.showResult(result);
     }, 450);
   }
 
+  private onOnlineReset(state: PublicRoomState): void {
+    if (!this.online.reset(state)) return;
+    this.destroyGame();
+    this.show('online-lobby');
+    this.byId('online-lobby-notice').textContent = '';
+  }
+
+  private async returnToOnlineRoom(): Promise<void> {
+    if (!this.online.match || !this.onlineClient) return;
+    try {
+      const response = await this.onlineClient.returnToLobby();
+      if (response.ok) this.onOnlineReset(response.state);
+      else this.showOnlineError(response.error);
+    } catch { this.showOnlineError({ code: 'CONNECTION_ERROR', message: '' }); }
+  }
+
   private onOnlineDisconnect(): void {
     if (!this.online.connected) return;
     this.online.disconnect();
+    this.music.stop();
     if (this.screen === 'playing' && this.online.match) {
       const notice = this.byId('match-notice'); notice.textContent = 'Connection lost. Leave the match and try again.'; notice.hidden = false;
       this.scene?.setTouchDirection(null);
@@ -257,7 +303,7 @@ class BombItApp {
       PLAYERS_NOT_READY: 'Everyone must be ready before starting.', NOT_ENOUGH_PLAYERS: 'At least two players are needed.',
       CONNECTION_ERROR: 'Server unavailable. Try again shortly.'
     };
-    const target = this.screen === 'online-lobby' ? 'online-lobby-notice' : this.screen === 'playing' ? 'match-notice' : 'online-notice';
+    const target = this.screen === 'online-lobby' ? 'online-lobby-notice' : this.screen === 'playing' ? 'match-notice' : this.screen === 'results' ? 'result-summary' : 'online-notice';
     this.byId(target).textContent = message[error.code] ?? 'The room action could not be completed.';
     if (target === 'match-notice') this.byId(target).hidden = false;
   }
@@ -275,12 +321,13 @@ class BombItApp {
     const statuses = this.byId('result-statuses'); statuses.replaceChildren(...result.statuses.map(status => {
       const item = document.createElement('li'); item.textContent = `${status.alive ? '●' : '○'} ${status.name} — ${status.alive ? 'SURVIVED' : 'OUT'}`; return item;
     }));
-    this.byId('play-again').hidden = !!this.online.match;
-    this.byId('back-lobby').textContent = this.online.match ? 'Leave Online Room' : 'Back to Lobby';
+    this.byId('play-again').hidden = false;
+    this.byId('play-again').textContent = this.online.match ? 'Back to Room' : 'Play Again';
+    this.byId('back-lobby').textContent = this.online.match ? 'Leave Room' : 'Back to Lobby';
     this.show('results');
   }
 
-  private destroyGame(): void { if (this.game) this.game.destroy(true); this.game = null; this.scene = null; this.byId('game').replaceChildren(); }
+  private destroyGame(): void { this.music.stop(); if (this.game) this.game.destroy(true); this.game = null; this.scene = null; this.byId('game').replaceChildren(); }
   private clearPressedDirections(): void { document.querySelectorAll('[data-direction].pressed').forEach(button => button.classList.remove('pressed')); }
   private vibrate(duration: number): void { if ('vibrate' in navigator) navigator.vibrate(duration); }
   private saveNickname(value: string): void { try { localStorage.setItem(PROFILE_KEY, value); } catch { /* Profile still works when storage is unavailable. */ } }

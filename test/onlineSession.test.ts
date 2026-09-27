@@ -6,8 +6,8 @@ import type { InitialMatchState, PublicRoomState } from '../src/network/types.ts
 const room: PublicRoomState = {
   code: 'ABCD', status: 'lobby', hostPlayerId: 'server-a',
   players: [
-    { id: 'server-a', nickname: 'Same', ready: false, host: true },
-    { id: 'server-b', nickname: 'Same', ready: false, host: false }
+    { id: 'server-a', nickname: 'Same', ready: false, host: true, kind: 'human' },
+    { id: 'server-b', nickname: 'Same', ready: false, host: false, kind: 'human' }
   ]
 };
 const initial: InitialMatchState = {
@@ -80,6 +80,21 @@ test('only a matching new server result is accepted', () => {
   assert.equal(session.acceptResult(result), true);
   assert.equal(session.acceptResult(result), false);
   assert.equal(session.acceptResult({ ...result, roomCode: 'WRONG', revision: 3 }), false);
+});
+
+test('room reset preserves identity and code while clearing old round state and revisions', () => {
+  const session = new OnlineSession(); session.join(room, 'server-a'); session.start(initial);
+  session.apply({ ...initial, revision: 4, status: 'finished' });
+  const reset = { ...room, players: room.players.map(player => ({ ...player, ready: false })) };
+  assert.equal(session.reset(reset), true);
+  assert.equal(session.selfPlayerId, 'server-a');
+  assert.equal(session.room?.code, 'ABCD');
+  assert.equal(session.match, null);
+  assert.equal(session.canStart(), false);
+  session.room = { ...reset, players: reset.players.map(player => ({ ...player, ready: true })) };
+  assert.equal(session.canStart(), true);
+  session.start({ ...initial, revision: 1 });
+  assert.equal((session.match as InitialMatchState | null)?.revision, 1);
 });
 
 test('only the owned player can cause direction-only input and disconnect stops it', () => {

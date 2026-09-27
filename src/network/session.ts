@@ -17,6 +17,15 @@ export class OnlineSession {
     this.connected = true;
   }
   start(state: InitialMatchState): void { if (this.room?.code === state.roomCode) this.match = state; }
+  reset(state: PublicRoomState): boolean {
+    if (!this.connected || !this.selfPlayerId || state.code !== this.room?.code || state.status !== 'lobby' ||
+        !state.players.some(player => player.id === this.selfPlayerId)) return false;
+    this.room = state;
+    this.match = null;
+    this.lastExplosionRevision = 0;
+    this.lastResultRevision = 0;
+    return true;
+  }
   apply(state: MatchState): boolean {
     if (!this.match || this.match.roomCode !== state.roomCode || state.revision <= this.match.revision) return false;
     this.match = { ...state, arena: this.match.arena };
@@ -40,10 +49,16 @@ export class OnlineSession {
     return !!this.room && this.room.status === 'lobby' && this.room.hostPlayerId === this.selfPlayerId &&
       this.room.players.length >= 2 && this.room.players.every(player => player.ready);
   }
-  sendDirection(direction: Direction, send: (payload: { direction: Direction }) => void): void {
-    if (this.canPlay()) send({ direction });
+  sendDirection(direction: Direction, send: (payload: { direction: Direction }) => void): boolean {
+    if (!this.canPlay()) return false;
+    send({ direction });
+    return true;
   }
-  sendBomb(send: (payload: Record<string, never>) => void): void { if (this.canPlay()) send({}); }
+  sendBomb(send: (payload: Record<string, never>) => void): boolean {
+    if (!this.canPlay()) return false;
+    send({});
+    return true;
+  }
   private canPlay(): boolean { return !!(this.connected && this.match?.status === 'playing' && this.match.players.some(player => player.id === this.selfPlayerId && player.alive)); }
   disconnect(): void { this.connected = false; }
   clear(): void { this.connected = false; this.selfPlayerId = null; this.room = null; this.match = null; this.lastExplosionRevision = 0; this.lastResultRevision = 0; }

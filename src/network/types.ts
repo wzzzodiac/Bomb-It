@@ -5,7 +5,7 @@ export type PublicRoomState = {
   code: string;
   status: 'lobby' | 'playing' | 'finished';
   hostPlayerId: string;
-  players: Array<{ id: string; nickname: string; ready: boolean; host: boolean }>;
+  players: Array<{ id: string; nickname: string; ready: boolean; host: boolean; kind: 'human' | 'bot' }>;
 };
 export type ServerError = { code: string; message: string };
 export type MembershipAck = { ok: true; state: PublicRoomState; selfPlayerId: string } | { ok: false; error: ServerError };
@@ -27,6 +27,7 @@ export interface ServerToClientEvents {
   'room:state': (state: PublicRoomState) => void;
   'room:error': (error: ServerError) => void;
   'room:left': (payload: { code: string }) => void;
+  'room:reset': (state: PublicRoomState) => void;
   'match:started': (state: InitialMatchState) => void;
   'match:state': (state: MatchState) => void;
   'match:explosion': (event: MatchExplosion) => void;
@@ -36,6 +37,9 @@ export interface ClientToServerEvents {
   'room:create': (payload: { nickname: string }, acknowledge: (result: MembershipAck) => void) => void;
   'room:join': (payload: { code: string; nickname: string }, acknowledge: (result: MembershipAck) => void) => void;
   'room:leave': (acknowledge: (result: ActionAck) => void) => void;
+  'room:return-to-lobby': (acknowledge: (result: RoomAck) => void) => void;
+  'room:add-bot': (payload: Record<string, never>, acknowledge: (result: RoomAck) => void) => void;
+  'room:remove-bot': (payload: { botId: string }, acknowledge: (result: RoomAck) => void) => void;
   'player:set-ready': (payload: { ready: boolean }, acknowledge: (result: RoomAck) => void) => void;
   'room:start-match': (acknowledge: (result: StartMatchAck) => void) => void;
   'player:input': (payload: { direction: Direction }, acknowledge: (result: InputAck) => void) => void;

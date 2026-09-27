@@ -6,14 +6,15 @@ import { DIRECTIONS, FLAME_MS, FUSE_MS, TILE, VECTORS, key, type ArenaSize, type
 import { evaluateMatch } from './matchRules.ts';
 import { canPlaceBomb, claimBomb, releaseBomb, type PlayerId, type PlayerState } from './players.ts';
 import type { Participant, RoundResult } from '../app/state.ts';
-import type { InitialMatchState, MatchExplosion, MatchState } from '../network/types.ts';
+import { OnlinePrediction } from '../network/prediction.ts';
+import type { BombAck, InitialMatchState, InputAck, MatchExplosion, MatchState } from '../network/types.ts';
 
 type Bomb = { position: Point; ownerId: PlayerId; range: number; body: Phaser.GameObjects.Container; timer: Phaser.Time.TimerEvent; exploded: boolean };
 type PowerUp = { kind: 'bomb' | 'fire'; body: Phaser.GameObjects.Container };
 export type MatchHud = { alive: number; total: number; localName: string; bombs: number; fire: number };
 export type MatchOptions =
   | { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void; online?: never }
-  | { arenaSize: ArenaSize; onHud: (hud: MatchHud) => void; online: { initial: InitialMatchState; selfPlayerId: string; sendDirection: (direction: Direction) => void; sendBomb: () => void }; participants?: never; onResult?: never };
+  | { arenaSize: ArenaSize; onHud: (hud: MatchHud) => void; online: { initial: InitialMatchState; selfPlayerId: string; sendDirection: (direction: Direction, onAck: (result: InputAck) => void) => boolean; sendBomb: (onAck: (result: BombAck) => void) => boolean }; participants?: never; onResult?: never };
 
 const COLORS = [0x56dcb4, 0xf17a88, 0x7ca8ff, 0xffca67, 0xc987f2, 0x75d9f0];
 
@@ -26,6 +27,11 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   private controllers = new Map<PlayerId, PlayerController>();
   private bombs = new Map<string, Bomb>();
   private onlineBombs = new Map<string, Phaser.GameObjects.Container>();
+  private onlineViewTargets = new Map<PlayerId, string>();
+  private prediction: OnlinePrediction | null = null;
+  private pendingBombBody: Phaser.GameObjects.Container | null = null;
+  private pendingBombTimer: Phaser.Time.TimerEvent | null = null;
+  private pendingBombKnownIds = new Set<string>();
   private flames = new Set<string>();
   private powerUps = new Map<string, PowerUp>();
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -68,11 +74,16 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   update(time: number): void {
     if (this.finished) return;
     if (this.options.online) {
-      if (Phaser.Input.Keyboard.JustDown(this.space)) this.options.online.sendBomb();
+      if (Phaser.Input.Keyboard.JustDown(this.space)) this.queueOnlineBomb();
       const direction = this.localDirection();
       if (direction && time - this.lastOnlineInput >= 135) {
         this.lastOnlineInput = time;
-        this.options.online.sendDirection(direction);
+        const predicted = this.prediction?.predict(direction);
+        if (predicted) this.moveOnlineView(this.options.online.selfPlayerId, predicted.target, 105);
+        const sent = this.options.online.sendDirection(direction, result => {
+          if (predicted) this.reconcileOnlineView(this.prediction?.acknowledge(predicted.id, result));
+        });
+        if (!sent && predicted) this.reconcileOnlineView(this.prediction?.cancel(predicted.id));
       }
       return;
     }
@@ -82,7 +93,20 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
 
   setTouchDirection(direction: Direction | null): void { this.touchDirection = direction; }
   queueLocalBomb(): void { if (!this.finished && !this.options.online) this.bombQueued = true; }
-  queueOnlineBomb(): void { if (!this.finished && this.options.online) this.options.online.sendBomb(); }
+  queueOnlineBomb(): void {
+    const online = this.options.online;
+    if (this.finished || !this.onlineReady || !online || this.pendingBombBody) return;
+    const point = this.prediction?.visualPosition ?? this.players.get(online.selfPlayerId)?.position;
+    if (!point) return;
+    this.pendingBombBody = this.createBombView(point).setAlpha(0.52);
+    this.pendingBombKnownIds = new Set(this.onlineBombs.keys());
+    this.pendingBombTimer = this.time.delayedCall(4000, () => this.clearPendingBomb());
+    const sent = online.sendBomb(result => {
+      if (!result.ok || !result.placed) this.clearPendingBomb();
+      else if (this.onlineRevision >= result.revision) this.clearPendingBomb();
+    });
+    if (!sent) this.clearPendingBomb();
+  }
 
   movePlayer(id: PlayerId, direction: Direction): boolean {
     if (this.options.online) return false;
@@ -162,7 +186,9 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     if (!online) throw new Error('Online match options are required.');
     this.arena = online.initial.arena.tiles;
     this.onlineRevision = online.initial.revision;
-    this.players.clear(); this.views.clear(); this.controllers.clear(); this.bombs.clear(); this.onlineBombs.clear(); this.flames.clear(); this.powerUps.clear();
+    this.players.clear(); this.views.clear(); this.controllers.clear(); this.bombs.clear(); this.onlineBombs.clear(); this.onlineViewTargets.clear(); this.flames.clear(); this.powerUps.clear();
+    this.prediction = new OnlinePrediction(online.initial, this.arena, online.selfPlayerId);
+    this.clearPendingBomb();
     this.touchDirection = null; this.bombQueued = false; this.finished = false;
     this.drawArena();
     this.createKeyboard();
@@ -180,9 +206,10 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     if (!this.onlineReady) { if (!this.pendingOnlineState || state.revision > this.pendingOnlineState.revision) this.pendingOnlineState = state; return; }
     if (state.revision <= this.onlineRevision) return;
     this.onlineRevision = state.revision;
-    this.applyOnlinePlayers(state.players);
+    const predicted = this.prediction?.apply(state);
+    this.applyOnlinePlayers(state.players, predicted);
     this.applyOnlineObjects(state);
-    if (state.status === 'finished') this.finished = true;
+    if (state.status === 'finished') { this.finished = true; this.clearPendingBomb(); }
   }
 
   applyOnlineExplosion(event: MatchExplosion): void {
@@ -201,6 +228,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
 
   private applyOnlineObjects(state: MatchState): void {
     const incomingBombIds = new Set(state.bombs.map(bomb => bomb.id));
+    if (this.pendingBombBody && state.bombs.some(bomb => bomb.ownerId === this.options.online?.selfPlayerId && !this.pendingBombKnownIds.has(bomb.id))) this.clearPendingBomb();
     for (const [id, body] of this.onlineBombs) if (!incomingBombIds.has(id)) { body.destroy(); this.onlineBombs.delete(id); }
     for (const bomb of state.bombs) if (!this.onlineBombs.has(bomb.id)) this.onlineBombs.set(bomb.id, this.createBombView(bomb.position));
     const incomingPowerKeys = new Set(state.powerUps.map(power => key(power.position)));
@@ -208,7 +236,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     for (const power of state.powerUps) if (!this.powerUps.has(key(power.position))) this.createPowerUpView(power.position, power.kind);
   }
 
-  private applyOnlinePlayers(incoming: MatchState['players']): void {
+  private applyOnlinePlayers(incoming: MatchState['players'], predicted: Point | null = null): void {
     const selfId = this.options.online?.selfPlayerId;
     incoming.forEach((entry, index) => {
       let player = this.players.get(entry.id);
@@ -216,16 +244,36 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
         player = { ...entry, position: { ...entry.position }, controller: entry.id === selfId ? 'local' : 'remote', color: COLORS[index % COLORS.length] };
         this.players.set(entry.id, player);
         this.views.set(entry.id, this.createPlayerView(player));
+        this.onlineViewTargets.set(entry.id, key(entry.position));
       } else {
-        if (player.position.x !== entry.position.x || player.position.y !== entry.position.y) {
-          this.tweens.add({ targets: this.views.get(entry.id), x: entry.position.x * TILE + TILE / 2, y: entry.position.y * TILE + TILE / 2, duration: 105, ease: 'Sine.easeOut' });
-        }
         Object.assign(player, entry, { position: { ...entry.position } });
+        this.moveOnlineView(entry.id, entry.id === selfId ? predicted ?? entry.position : entry.position, entry.id === selfId ? 90 : 145);
       }
       this.views.get(entry.id)?.setAlpha(entry.alive ? 1 : 0.28);
     });
-    for (const id of this.players.keys()) if (!incoming.some(player => player.id === id)) { this.views.get(id)?.destroy(); this.views.delete(id); this.players.delete(id); }
+    for (const id of this.players.keys()) if (!incoming.some(player => player.id === id)) { this.views.get(id)?.destroy(); this.views.delete(id); this.players.delete(id); this.onlineViewTargets.delete(id); }
     this.updateHud();
+  }
+
+  private moveOnlineView(id: PlayerId, point: Point, duration: number): void {
+    const view = this.views.get(id);
+    if (!view || this.onlineViewTargets.get(id) === key(point)) return;
+    this.onlineViewTargets.set(id, key(point));
+    this.tweens.killTweensOf(view);
+    this.tweens.add({ targets: view, x: point.x * TILE + TILE / 2, y: point.y * TILE + TILE / 2, duration, ease: 'Linear' });
+  }
+
+  private reconcileOnlineView(point: Point | null | undefined): void {
+    const id = this.options.online?.selfPlayerId;
+    if (id && point) this.moveOnlineView(id, point, 90);
+  }
+
+  private clearPendingBomb(): void {
+    this.pendingBombTimer?.remove();
+    this.pendingBombTimer = null;
+    this.pendingBombBody?.destroy();
+    this.pendingBombBody = null;
+    this.pendingBombKnownIds.clear();
   }
 
   private tileColor(tile: string, x: number, y: number): number { return tile === 'wall' ? 0x5a728e : tile === 'crate' ? 0x975c3f : (x + y) % 2 ? 0x253d53 : 0x2b455a; }

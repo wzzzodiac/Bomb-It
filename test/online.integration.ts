@@ -16,6 +16,7 @@ const a = new OnlineSession(); const b = new OnlineSession();
 const makeHandlers = (session: OnlineSession, states: MatchState[], explosions: MatchExplosion[], results: MatchResult[]) => ({
   room: (state: PublicRoomState) => { if (session.room?.code === state.code) session.room = state; },
   left: () => session.clear(),
+  reset: (state: PublicRoomState) => { session.reset(state); },
   error: (error: ServerError) => failures.push(error),
   started: (state: InitialMatchState) => session.start(state),
   match: (state: MatchState) => { states.push(state); session.apply(state); },
@@ -72,8 +73,22 @@ try {
   assert.equal(a.match?.bombs.length, 0);
   assert.deepEqual(resultsA, resultsB);
   assert.equal(resultsA[0]?.winnerId, b.selfPlayerId);
+  const oldCode = a.room?.code;
+  const oldA = a.selfPlayerId; const oldB = b.selfPlayerId;
+  const reset = await clientB.returnToLobby();
+  assert.equal(reset.ok, true);
+  await until(() => !a.match && !b.match);
+  assert.equal(a.room?.code, oldCode); assert.equal(b.room?.code, oldCode);
+  assert.equal(a.selfPlayerId, oldA); assert.equal(b.selfPlayerId, oldB);
+  assert.ok(a.room?.players.every(player => !player.ready));
+  assert.equal((await clientA.returnToLobby()).ok, true);
+  await clientA.ready(true); await clientB.ready(true);
+  await until(() => a.canStart());
+  const second = await clientA.start();
+  assert.equal(second.ok, true);
+  await until(() => a.match?.revision === 1 && b.match?.revision === 1);
   assert.deepEqual(failures, []);
-  process.stdout.write('Two-client online integration passed: duplicate names, shared arena, movement, bomb, explosion, death and result.\n');
+  process.stdout.write('Two-client online integration passed: movement, bomb, result, same-room reset and second round.\n');
 } finally {
   clientA.close(); clientB.close();
 }
