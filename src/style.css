@@ -406,4 +406,3 @@ body[data-screen=playing] .app-shell{margin-left:0}
 }
 .match-layout{position:relative}
 .match-notice{position:absolute;left:50%;top:48px;transform:translateX(-50%);z-index:10;margin:0;padding:10px 14px;max-width:min(90%,460px);border:1px solid var(--danger);background:#08111af0;color:var(--text);text-align:center;font-size:12px}
-body[data-mode=online] .bomb-button{opacity:.4;cursor:not-allowed}
