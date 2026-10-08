@@ -2,9 +2,9 @@
 :root{--bg:#261c46;--panel:#42336a;--panel-2:#514076;--line:#c6bae650;--line-soft:#c6bae630;--text:#fff1cf;--muted:#d2c7e4;--accent:#ffbc45;--accent-strong:#ffd785;--good:#5fe2c4;--danger:#ff819b;--amber:#ffce58}
 body{background-image:radial-gradient(ellipse at 50% 0%,#51407660,transparent 65%),linear-gradient(#c6bae60a 1px,transparent 1px),linear-gradient(90deg,#c6bae60a 1px,transparent 1px)}
 .menu-card{border-radius:12px;border:2px solid #b9a7d155;box-shadow:0 7px 0 #17122d,0 20px 50px #17122d44;background:var(--bg)}
-.menu-card::before{content:'BOLT CLUB / BOMB-IT';background:var(--bg)}
-.result-card::before{content:'BOLT CLUB / ROUND COMPLETE'}
-.arena-frame::before{content:'BOLT CLUB / LIVE';background:var(--panel)}
+.menu-card::before{content:'BOMB-IT';background:var(--bg)}
+.result-card::before{content:'ROUND COMPLETE'}
+.arena-frame::before{content:'BOMB-IT / LIVE';background:var(--panel)}
 .eyebrow{color:#261c46;background:#ff819b;padding:5px 9px;width:max-content;max-width:100%;font-size:10px;letter-spacing:.12em;transform:rotate(-2deg)}
 .primary-button{border:2px solid #17122d;border-radius:3px;box-shadow:3px 3px 0 #ff819b;color:#261c46}
 .jumbo-button{box-shadow:3px 3px 0 #ff819b}.secondary-button{border-radius:6px}
