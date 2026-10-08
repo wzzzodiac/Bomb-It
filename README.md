@@ -1,6 +1,6 @@
 # Bomb-It
 
-A mobile-first Bomberman-style browser game with local Quick Play and server-authoritative online rounds. Graphics are simple Phaser shapes, not final art.
+A mobile-first Bomberman-style browser game with local Quick Play and server-authoritative online rounds. The Scrapyard visual refresh uses six original robots and a compact, locally generated sprite atlas.
 
 Live demo: [Play Bomb-It](https://wzzzodiac.github.io/Bomb-It/)
 
@@ -30,4 +30,14 @@ Stack: TypeScript, Phaser 3, Vite, Socket.IO client, and the existing Cloud Run 
 - Nickname persistence in the browser.
 - Online create/join, ready/start, and complete server-authoritative arena, movement, bombs, explosions, crates, power-ups, deaths, and results for two or more human players. Online input sends direction or an empty bomb intent; the server owns all gameplay outcomes.
 
-Online reconnect, rematches, matchmaking, chat, accounts, and persistence are not implemented. Rooms are process-local on the server.
+Online rooms support server bots and same-room replay via Back to Room. Online reconnect, matchmaking, chat, accounts, and persistence are not implemented. Rooms are process-local on the server.
+
+## Scrapyard review preview
+
+[Play the isolated visual preview](https://wzzzodiac.github.io/Bomb-It-Preview/) — not production. It reuses the existing compatible backend; no server or game-rule changes are needed. The production link above remains unchanged until this branch is approved and merged.
+
+[Visual comparison, download measurements and verification](docs/visual-refresh.md).
+
+The renderer is downloaded on first Quick Play/local start, or before joining an online room. Home/profile use only system fonts and inline original artwork. Bombs, flames and tiles share a 512×128 atlas generated once per game texture manager. There are no additional downloaded game textures or new dependencies. Flames stay visible for their full damaging lifetime; decorative bomb pulses respect reduced-motion.
+
+`scripts/visual-smoke.mjs` runs a focused Edge/Playwright development smoke test. Use an already installed Playwright package via `PLAYWRIGHT_MODULE` (or normal module resolution); do not install browsers automatically. Set `EDGE_EXECUTABLE` only if the Edge channel is unavailable. Start an unchanged local server with `PORT=8081` and `CLIENT_ORIGIN=http://127.0.0.1:5191`, then Vite with `VITE_SERVER_URL=http://127.0.0.1:8081` on port 5191. Run `node scripts/visual-smoke.mjs`; screenshots/results go to ignored `outputs/visual-qa/`. `BOMB_IT_TEST_URL` and `BOMB_IT_QA_OUT` can override the development URL/output directory. Test-only scene instrumentation pauses bots after checking movement for deterministic bomb/death assertions; it is not shipped in the game.

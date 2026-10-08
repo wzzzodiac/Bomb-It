@@ -1,9 +1,9 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import matchMusicUrl from './assets/bombit.mp3?url';
 import { MatchMusic } from './audio/MatchMusic.ts';
 import { addBot, createLocalRoom, MAX_PLAYERS_PER_ROOM, normalizeNickname, removeBot, type AppScreen, type RoomState, type RoundResult } from './app/state.ts';
 import { getArenaSizeForPlayerCount, TILE, type Direction } from './game/config.ts';
-import { GameScene, type MatchHud } from './game/GameScene.ts';
+import type { GameScene, MatchHud } from './game/GameScene.ts';
 import { OnlineClient } from './network/client.ts';
 import { resolveServerUrl } from './network/config.ts';
 import { OnlineSession } from './network/session.ts';
@@ -22,6 +22,9 @@ class BombItApp {
   private readonly online = new OnlineSession();
   private readonly music = new MatchMusic(matchMusicUrl);
   private onlineClient: OnlineClient | null = null;
+  private engine: typeof import('./game/engine.ts') | null = null;
+  private engineLoad: Promise<typeof import('./game/engine.ts')> | null = null;
+  private preparingMatch = false;
 
   constructor() {
     this.bindUi();
@@ -106,8 +109,31 @@ class BombItApp {
     this.byId('start-match').textContent = `Start Match · ${this.room.participants.length} Player${this.room.participants.length === 1 ? '' : 's'}`;
   }
 
-  private startMatch(): void {
+  private async loadEngine(): Promise<typeof import('./game/engine.ts') | null> {
+    if (this.engine) return this.engine;
+    const notice = this.byId('loading-notice');
+    notice.hidden = false; notice.textContent = 'Opening the workshop…';
+    try {
+      this.engineLoad ??= import('./game/engine.ts');
+      this.engine = await this.engineLoad;
+      notice.hidden = true;
+      return this.engine;
+    } catch {
+      this.engineLoad = null;
+      notice.textContent = 'Download interrupted. Check your connection and reload.';
+      return null;
+    }
+  }
+
+  private async startMatch(): Promise<void> {
+    if (this.preparingMatch) return;
     if (!this.room) this.room = createLocalRoom(this.nickname);
+    const room = this.room, screen = this.screen;
+    this.preparingMatch = true;
+    const engine = await this.loadEngine();
+    this.preparingMatch = false;
+    if (!engine || this.room !== room || this.screen !== screen) return;
+    const { Phaser, GameScene } = engine;
     this.destroyGame(); this.show('playing');
     document.body.dataset.mode = 'local';
     this.byId('match-leave').hidden = true;
@@ -153,6 +179,8 @@ class BombItApp {
     const client = this.client(); if (!client) return;
     this.byId('online-notice').textContent = 'Connecting…';
     try {
+      // Load before joining: match events stay synchronous, with no lost updates.
+      if (!await this.loadEngine() || this.screen !== 'online') return;
       await client.connect();
       const code = this.byId<HTMLInputElement>('online-code').value.trim().toUpperCase();
       const result = action === 'create' ? await client.create(this.nickname) : await client.join(code, this.nickname);
@@ -220,6 +248,8 @@ class BombItApp {
 
   private onOnlineStarted(state: InitialMatchState): void {
     if (!this.online.selfPlayerId || this.online.room?.code !== state.roomCode || this.online.match) return;
+    if (!this.engine) throw new Error('Game renderer must be loaded before joining a room.');
+    const { Phaser, GameScene } = this.engine;
     this.online.start(state);
     this.destroyGame(); this.show('playing');
     document.body.dataset.mode = 'online';

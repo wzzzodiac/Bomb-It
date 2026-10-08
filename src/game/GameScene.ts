@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ART, prepareArt, ROBOT_COLORS, tileFrame } from './art.ts';
 import { allocateSpawns, blastTiles, createArena, tileAt, type Arena } from './arena.ts';
 import { canEscapeBomb, findEscapeDirection, type BombThreat } from './botLogic.ts';
 import { BotController, LocalController, RemoteController, type ControllerHost, type PlayerController } from './controllers.ts';
@@ -16,12 +17,11 @@ export type MatchOptions =
   | { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void; online?: never }
   | { arenaSize: ArenaSize; onHud: (hud: MatchHud) => void; online: { initial: InitialMatchState; selfPlayerId: string; sendDirection: (direction: Direction, onAck: (result: InputAck) => void) => boolean; sendBomb: (onAck: (result: BombAck) => void) => boolean }; participants?: never; onResult?: never };
 
-const COLORS = [0x56dcb4, 0xf17a88, 0x7ca8ff, 0xffca67, 0xc987f2, 0x75d9f0];
+const COLORS = ROBOT_COLORS;
 
 export class GameScene extends Phaser.Scene implements ControllerHost {
   private arena!: Arena;
-  private tiles: Phaser.GameObjects.Rectangle[][] = [];
-  private tileDetails: Phaser.GameObjects.Container[][] = [];
+  private tiles: Phaser.GameObjects.Image[][] = [];
   private players = new Map<PlayerId, PlayerState>();
   private views = new Map<PlayerId, Phaser.GameObjects.Container>();
   private controllers = new Map<PlayerId, PlayerController>();
@@ -162,13 +162,13 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   }
 
   private drawArena(): void {
-    this.tiles = []; this.tileDetails = [];
+    prepareArt(this);
+    this.tiles = [];
     for (let y = 0; y < this.arena.length; y++) {
-      this.tiles[y] = []; this.tileDetails[y] = [];
+      this.tiles[y] = [];
       for (let x = 0; x < this.arena[y].length; x++) {
         const tile = this.arena[y][x];
-        this.tiles[y][x] = this.add.rectangle(x * TILE + TILE / 2, y * TILE + TILE / 2, TILE - 1, TILE - 1, this.tileColor(tile, x, y)).setStrokeStyle(1, 0x15283e, 0.55);
-        this.tileDetails[y][x] = this.drawTileDetail(x, y, tile);
+        this.tiles[y][x] = this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, ART, tileFrame(tile, x, y)).setDisplaySize(TILE, TILE);
       }
     }
   }
@@ -219,9 +219,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     for (const change of event.changes) {
       if (!this.tiles[change.y]?.[change.x]) continue;
       this.arena[change.y][change.x] = change.tile;
-      this.tiles[change.y][change.x].setFillStyle(this.tileColor(change.tile, change.x, change.y));
-      this.tileDetails[change.y][change.x].destroy();
-      this.tileDetails[change.y][change.x] = this.drawTileDetail(change.x, change.y, change.tile);
+      this.tiles[change.y][change.x].setFrame(tileFrame(change.tile, change.x, change.y));
     }
     for (const point of event.tiles) this.renderFlame(point, event.durationMs);
   }
@@ -276,34 +274,27 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     this.pendingBombKnownIds.clear();
   }
 
-  private tileColor(tile: string, x: number, y: number): number { return tile === 'wall' ? 0x5a728e : tile === 'crate' ? 0x975c3f : (x + y) % 2 ? 0x253d53 : 0x2b455a; }
-  private drawTileDetail(x: number, y: number, tile: string): Phaser.GameObjects.Container {
-    const detail = this.add.container(x * TILE + TILE / 2, y * TILE + TILE / 2);
-    if (tile === 'wall') detail.add([this.add.rectangle(0, -3, 31, 28, 0x849bb1).setStrokeStyle(2, 0xacc0d0), this.add.rectangle(0, 13, 32, 5, 0x354f6a)]);
-    else if (tile === 'crate') detail.add([this.add.rectangle(0, 0, 31, 31, 0xc38150).setStrokeStyle(2, 0x613d36), this.add.rectangle(0, 0, 27, 6, 0xe0a16b), this.add.rectangle(-10, -10, 3, 3, 0x59372f), this.add.rectangle(10, 10, 3, 3, 0x59372f)]);
-    else detail.add(this.add.rectangle(-14, -14, 3, 3, 0x65829a, 0.48));
-    return detail;
-  }
-
   private createPlayerView(player: PlayerState): Phaser.GameObjects.Container {
     const body = this.add.container(player.position.x * TILE + TILE / 2, player.position.y * TILE + TILE / 2).setDepth(5);
-    body.add([this.add.ellipse(1, 11, 27, 9, 0x081929, 0.65), this.add.circle(0, 0, 15, player.color).setStrokeStyle(3, 0x173b55), this.add.ellipse(-5, -9, 11, 4, 0xffffff, 0.38), this.add.circle(-5, -3, 2, 0x172b3a), this.add.circle(5, -3, 2, 0x172b3a)]);
+    body.add(this.add.image(0, 0, ART, `robot${Math.max(0, COLORS.indexOf(player.color))}`).setDisplaySize(TILE, TILE));
+    if (player.controller === 'local') body.add(this.add.triangle(0, 18, 0, 0, 6, 0, 3, -3, 0xffffff).setOrigin(0.5));
     return body;
   }
 
   private createBombView(position: Point): Phaser.GameObjects.Container {
     const body = this.add.container(position.x * TILE + TILE / 2, position.y * TILE + TILE / 2).setDepth(3);
-    body.add([this.add.ellipse(0, 12, 29, 8, 0x071322, 0.65), this.add.circle(0, 1, 13, 0x172434).setStrokeStyle(3, 0xd3dee6), this.add.circle(-4, -5, 4, 0xffffff, 0.3), this.add.rectangle(2, -14, 4, 7, 0xffd166)]);
-    this.tweens.add({ targets: body, scale: 1.12, yoyo: true, repeat: 3, duration: 230 });
-    const pulse = this.add.circle(body.x, body.y, 17, 0xffd166, 0).setStrokeStyle(3, 0xffd166).setDepth(6);
-    this.tweens.add({ targets: pulse, scale: 1.6, alpha: 0, duration: 360, onComplete: () => pulse.destroy() });
+    body.add(this.add.image(0, 0, ART, 'bomb').setDisplaySize(TILE, TILE));
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.tweens.add({ targets: body, scale: 1.06, yoyo: true, repeat: 3, duration: 230 });
+    }
     return body;
   }
 
   private renderFlame(point: Point, durationMs: number): void {
     const flame = this.add.container(point.x * TILE + TILE / 2, point.y * TILE + TILE / 2).setDepth(4);
-    flame.add([this.add.rectangle(0, 0, 35, 13, 0xff923c), this.add.rectangle(0, 0, 13, 35, 0xff923c), this.add.circle(0, 0, 10, 0xffe27a)]);
-    this.tweens.add({ targets: flame, alpha: 0.35, duration: Math.max(1, durationMs - 100), ease: 'Sine.easeIn' });
+    flame.add(this.add.image(0, 0, ART, 'flame').setDisplaySize(TILE, TILE));
+    // Danger remains clearly visible for the entire authoritative flame lifetime.
+    this.tweens.add({ targets: flame, alpha: 0.8, duration: Math.max(1, durationMs - 100), ease: 'Sine.easeIn' });
     this.time.delayedCall(durationMs, () => flame.destroy());
   }
 
@@ -336,8 +327,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     const owner = this.players.get(bomb.ownerId); if (owner) releaseBomb(owner);
     for (const point of blastTiles(this.arena, bomb.position, bomb.range)) {
       if (tileAt(this.arena, point) === 'crate') {
-        this.arena[point.y][point.x] = 'floor'; this.tiles[point.y][point.x].setFillStyle(this.tileColor('floor', point.x, point.y));
-        this.tileDetails[point.y][point.x].destroy(); this.tileDetails[point.y][point.x] = this.drawTileDetail(point.x, point.y, 'floor');
+        this.arena[point.y][point.x] = 'floor'; this.tiles[point.y][point.x].setFrame(tileFrame('floor', point.x, point.y));
         if (Math.random() < 0.22) this.spawnPowerUp(point);
       }
       const chained = this.bombs.get(key(point)); if (chained) this.time.delayedCall(0, () => this.explode(chained));
@@ -355,7 +345,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   }
   private createPowerUpView(point: Point, kind: 'bomb' | 'fire'): void {
     const body = this.add.container(point.x * TILE + TILE / 2, point.y * TILE + TILE / 2).setDepth(2);
-    body.add([this.add.circle(0, 0, 14, kind === 'bomb' ? 0x6567d7 : 0xe9833f).setStrokeStyle(3, 0xf5eacb), this.add.text(0, 0, kind === 'bomb' ? 'B+' : 'F+', { fontFamily: 'Arial', fontSize: '12px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5)]);
+    body.add(this.add.image(0, 0, ART, `up-${kind}`).setDisplaySize(TILE, TILE));
     this.powerUps.set(key(point), { kind, body });
   }
   private collect(player: PlayerState, point: Point): void {

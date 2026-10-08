@@ -1,0 +1,23 @@
+{
+  "url": "https://wzzzodiac.github.io/Bomb-It-Preview/",
+  "status": 200,
+  "checks": [
+    "two clients joined existing production-compatible backend",
+    "online bot add/remove",
+    "online match renders in desktop and mobile landscape",
+    "live preview movement/bomb intent, explosion/death/results",
+    "live same-room replay reset"
+  ],
+  "errors": [],
+  "networkFailures": [],
+  "expectedMediaAborts": [
+    {
+      "url": "https://wzzzodiac.github.io/Bomb-It-Preview/assets/bombit-g_dYMPig.mp3",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://wzzzodiac.github.io/Bomb-It-Preview/assets/bombit-g_dYMPig.mp3",
+      "failure": "net::ERR_ABORTED"
+    }
+  ]
+}

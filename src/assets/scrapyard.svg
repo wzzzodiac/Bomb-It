@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 210" fill="none">
+  <!-- Original Bomb-It artwork. Shared silhouettes with the in-game atlas. -->
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" stroke="#36505a" stroke-width="1"/></pattern>
+    <g id="bot">
+      <ellipse cx="0" cy="56" rx="47" ry="10" fill="#0c242c"/>
+      <rect x="-29" y="38" width="20" height="19" rx="5" fill="#132d39"/><rect x="9" y="38" width="20" height="19" rx="5" fill="#132d39"/>
+      <rect x="-39" y="2" width="78" height="42" rx="10" fill="currentColor" stroke="#112c39" stroke-width="5"/>
+      <rect x="-47" y="7" width="14" height="27" rx="5" fill="#c4d5ca"/><rect x="33" y="7" width="14" height="27" rx="5" fill="#c4d5ca"/>
+      <rect x="-37" y="-34" width="74" height="51" rx="12" fill="currentColor" stroke="#112c39" stroke-width="5"/>
+      <rect x="-28" y="-22" width="56" height="30" rx="8" fill="#122d3e"/>
+      <rect x="-20" y="-13" width="13" height="12" rx="3" fill="#e5f8d7"/><rect x="7" y="-13" width="13" height="12" rx="3" fill="#e5f8d7"/>
+      <path d="M-24-29H3" stroke="#ffffff70" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-12" y="21" width="24" height="18" rx="3" fill="#173443"/>
+    </g>
+  </defs>
+  <rect width="600" height="210" rx="10" fill="#203741"/>
+  <rect width="600" height="210" rx="10" fill="url(#grid)"/>
+  <path d="M0 170H600" stroke="#b6c3a5" stroke-opacity=".15" stroke-width="2"/>
+  <path d="M15 17h40M15 17v25M585 17h-40M585 17v25" stroke="#9dae8e" stroke-width="2"/>
+  <g transform="translate(90 105) rotate(-8)"><rect x="-33" y="-30" width="66" height="67" rx="5" fill="#b97742" stroke="#553a30" stroke-width="4"/><path d="M-26-20h52M-23-4l46 30M23-4l-46 30" stroke="#e5b26a" stroke-width="7"/></g>
+  <g transform="translate(510 125) rotate(7)"><rect x="-29" y="-27" width="58" height="57" rx="5" fill="#718d91" stroke="#192f37" stroke-width="4"/><path d="M-21-16h42M-17 0h34" stroke="#a2b5af" stroke-width="6"/><path d="M-9 16H9" stroke="#c3c8a4" stroke-width="4"/></g>
+  <g transform="translate(205 127) rotate(-9) scale(.82)" color="#f17a88"><path d="M-29-28l-7-25 23 16M29-28l7-25-23 16" stroke="currentColor" stroke-width="8"/><use href="#bot"/><path d="M-17-13l8 7-8 7M9-13l8 7-8 7" stroke="#e5f8d7" stroke-width="3"/></g>
+  <g transform="translate(398 127) rotate(9) scale(.82)" color="#ffca67"><use href="#bot"/><rect x="-40" y="-40" width="80" height="16" rx="8" fill="#ffe097" stroke="#684d28" stroke-width="4"/><rect x="-6" y="-43" width="12" height="12" rx="3" fill="#fff2c6"/></g>
+  <g transform="translate(300 116)" color="#56dcb4"><path d="M0-30v-24" stroke="currentColor" stroke-width="6"/><circle cy="-56" r="7" fill="#e0e9c0"/><use href="#bot"/><path d="M0 25v10" stroke="#f2f4db" stroke-width="4"/></g>
+  <g transform="translate(111 174)"><circle r="20" fill="#172e3d" stroke="#e6c578" stroke-width="4"/><path d="M0-19v-8l10-7" stroke="#ffd884" stroke-width="4"/><path d="M10-35l4 3 5-3-2 6 4 3-6 1-2 5-2-6-5-2z" fill="#ff965b"/></g>
+  <path d="M456 47l4 8 9 2-7 6 1 9-7-4-8 4 2-9-6-6 9-2zM158 43l2 4 5 1-4 3 1 5-4-2-4 2 1-5-3-3 4-1z" fill="#e0e9c0"/>
+  <path d="M14 197h38M548 197h38" stroke="#56dcb4" stroke-width="3"/>
+</svg>

@@ -1,0 +1,166 @@
+{
+  "label": "before",
+  "browser": "154.0.4258.62",
+  "conditions": "cold context; cache disabled; gzip HTML/JS/CSS; 1.6 Mbps down / 750 Kbps up; 150 ms latency; no CPU throttle; Edge desktop emulation, not a real phone",
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "homeMs": 2274,
+      "playMs": 2658,
+      "matchDelayMs": 314,
+      "homeBytes": 362980,
+      "completedRequestsBytes": 396752,
+      "streamedBodyBytes": 552542,
+      "requests": [
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/",
+          "type": "Document"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-yypjJQKt.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-kOzJdPTS.css",
+          "type": "Stylesheet"
+        },
+        {
+          "url": "https://avatars.githubusercontent.com/u/46037018?v=4",
+          "type": "Other"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "https://avatars.githubusercontent.com/u/46037018?v=4",
+          "type": "Other"
+        }
+      ],
+      "errors": [],
+      "fps": 120.23052464224483,
+      "slowFrames": 0,
+      "frames": 121,
+      "canvas": {
+        "width": 680,
+        "height": 520,
+        "visibleWidth": 787,
+        "visibleHeight": 601.34375
+      },
+      "overlap": false,
+      "scroll": false,
+      "bomb": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "homeMs": 2289,
+      "playMs": 2432,
+      "matchDelayMs": 121,
+      "homeBytes": 362980,
+      "completedRequestsBytes": 396753,
+      "streamedBodyBytes": 515042,
+      "requests": [
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/",
+          "type": "Document"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-yypjJQKt.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-kOzJdPTS.css",
+          "type": "Stylesheet"
+        },
+        {
+          "url": "https://avatars.githubusercontent.com/u/46037018?v=4",
+          "type": "Other"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "https://avatars.githubusercontent.com/u/46037018?v=4",
+          "type": "Other"
+        }
+      ],
+      "errors": [],
+      "fps": 120.60201335605979,
+      "slowFrames": 0,
+      "frames": 121,
+      "canvas": {
+        "width": 680,
+        "height": 520,
+        "visibleWidth": 356,
+        "visibleHeight": 271.75
+      },
+      "overlap": false,
+      "scroll": false,
+      "bomb": 106
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "homeMs": 2270,
+      "playMs": 2421,
+      "matchDelayMs": 133,
+      "homeBytes": 362980,
+      "completedRequestsBytes": 396752,
+      "streamedBodyBytes": 518042,
+      "requests": [
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/",
+          "type": "Document"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-yypjJQKt.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-kOzJdPTS.css",
+          "type": "Stylesheet"
+        },
+        {
+          "url": "https://avatars.githubusercontent.com/u/46037018?v=4",
+          "type": "Other"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "https://avatars.githubusercontent.com/u/46037018?v=4",
+          "type": "Other"
+        }
+      ],
+      "errors": [],
+      "fps": 120.65011466737474,
+      "slowFrames": 0,
+      "frames": 121,
+      "canvas": {
+        "width": 680,
+        "height": 520,
+        "visibleWidth": 434.765625,
+        "visibleHeight": 332
+      },
+      "overlap": false,
+      "scroll": false,
+      "bomb": 92.828125
+    }
+  ]
+}
