@@ -9,6 +9,8 @@ import { resolveServerUrl } from './network/config.ts';
 import { OnlineSession } from './network/session.ts';
 import type { InitialMatchState, MatchExplosion, MatchResult, MatchState, PublicRoomState, ServerError } from './network/types.ts';
 import './style.css';
+import './bolt.css';
+import { bindLogo } from './ui/logo.ts';
 
 const PROFILE_KEY = 'bomb-it.nickname';
 
@@ -32,6 +34,7 @@ class BombItApp {
   }
 
   private bindUi(): void {
+    bindLogo(this.byId<HTMLButtonElement>('bolt-logo'));
     this.byId<HTMLFormElement>('profile-form').addEventListener('submit', event => {
       event.preventDefault();
       const value = normalizeNickname(this.byId<HTMLInputElement>('nickname').value);
@@ -112,7 +115,7 @@ class BombItApp {
   private async loadEngine(): Promise<typeof import('./game/engine.ts') | null> {
     if (this.engine) return this.engine;
     const notice = this.byId('loading-notice');
-    notice.hidden = false; notice.textContent = 'Opening the workshop…';
+    notice.hidden = false; notice.textContent = 'Loading the game…';
     try {
       this.engineLoad ??= import('./game/engine.ts');
       this.engine = await this.engineLoad;
@@ -120,7 +123,7 @@ class BombItApp {
       return this.engine;
     } catch {
       this.engineLoad = null;
-      notice.textContent = 'Download interrupted. Check your connection and reload.';
+      notice.textContent = 'Download stopped. Check your connection and reload.';
       return null;
     }
   }
@@ -135,6 +138,7 @@ class BombItApp {
     if (!engine || this.room !== room || this.screen !== screen) return;
     const { Phaser, GameScene } = engine;
     this.destroyGame(); this.show('playing');
+    this.byId('loading-notice').hidden=false;this.byId('loading-notice').textContent='Loading the arena…';
     document.body.dataset.mode = 'local';
     this.byId('match-leave').hidden = true;
     this.byId('match-powerups').hidden = false;
@@ -148,8 +152,8 @@ class BombItApp {
     if (!arenaFrame) throw new Error('Missing arena frame');
     arenaFrame.style.setProperty('--arena-aspect', `${arenaSize.cols} / ${arenaSize.rows}`);
     arenaFrame.style.setProperty('--arena-ratio', String(arenaSize.cols / arenaSize.rows));
-    this.scene = new GameScene({ participants: this.room.participants, arenaSize, onHud: hud => this.renderHud(hud), onResult: result => this.showResult(result) });
-    this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#223b52', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
+    this.scene = new GameScene({ participants: this.room.participants, arenaSize, onHud: hud => this.renderHud(hud), onResult: result => this.showResult(result), onAssetError:()=>this.artDownloadFailed() });
+    this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#261c46', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
     this.music.start();
   }
 
@@ -160,7 +164,7 @@ class BombItApp {
   private client(): OnlineClient | null {
     if (this.onlineClient) return this.onlineClient;
     const url = this.serverUrl();
-    if (!url) { this.byId('online-notice').textContent = 'Online is unavailable here until a server URL is configured.'; return null; }
+    if (!url) { this.byId('online-notice').textContent = 'Online is not available on this site.'; return null; }
     this.onlineClient = new OnlineClient(url, {
       room: state => { if (this.online.selfPlayerId && state.code === this.online.room?.code) { this.online.room = state; if (this.screen === 'online-lobby') this.renderOnlineLobby(); } },
       left: code => { if (this.online.room?.code === code) this.finishOnlineLeave(); },
@@ -210,7 +214,7 @@ class BombItApp {
       slots.append(item);
     }
     const self = room.players.find(player => player.id === this.online.selfPlayerId);
-    this.byId('online-ready').textContent = self?.ready ? 'Unready' : 'Ready';
+    this.byId('online-ready').textContent = self?.ready ? 'Not Ready' : 'Ready';
     this.byId<HTMLButtonElement>('online-ready').disabled = room.status !== 'lobby' || !self;
     this.byId<HTMLButtonElement>('online-start').disabled = !this.online.canStart();
     this.byId('online-start').hidden = room.hostPlayerId !== this.online.selfPlayerId;
@@ -252,6 +256,7 @@ class BombItApp {
     const { Phaser, GameScene } = this.engine;
     this.online.start(state);
     this.destroyGame(); this.show('playing');
+    this.byId('loading-notice').hidden=false;this.byId('loading-notice').textContent='Loading the arena…';
     document.body.dataset.mode = 'online';
     this.byId('match-room').textContent = state.roomCode;
     this.byId('match-leave').hidden = false;
@@ -265,12 +270,12 @@ class BombItApp {
     if (!arenaFrame) throw new Error('Missing arena frame');
     arenaFrame.style.setProperty('--arena-aspect', `${arenaSize.cols} / ${arenaSize.rows}`);
     arenaFrame.style.setProperty('--arena-ratio', String(arenaSize.cols / arenaSize.rows));
-    this.scene = new GameScene({ arenaSize, onHud: hud => this.renderHud(hud), online: {
+    this.scene = new GameScene({ arenaSize, onHud: hud => this.renderHud(hud), onAssetError:()=>this.artDownloadFailed(), online: {
       initial: state, selfPlayerId: this.online.selfPlayerId,
       sendDirection: (direction, onAck) => this.online.sendDirection(direction, payload => this.onlineClient?.sendDirection(payload.direction, onAck)),
       sendBomb: onAck => this.online.sendBomb(() => this.onlineClient?.placeBomb(onAck))
     } });
-    this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#223b52', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
+    this.game = new Phaser.Game({ type: Phaser.AUTO, parent: gameElement, backgroundColor: '#261c46', width: arenaSize.cols * TILE, height: arenaSize.rows * TILE, scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, scene: this.scene });
     this.music.start();
   }
 
@@ -328,26 +333,37 @@ class BombItApp {
 
   private showOnlineError(error: ServerError): void {
     const message: Record<string, string> = {
-      ROOM_NOT_FOUND: 'Room not found.', ROOM_FULL: 'Room is full.', ROOM_LIMIT_REACHED: 'The server has reached its room limit.',
+      ROOM_NOT_FOUND: 'Room not found.', ROOM_FULL: 'Room is full.', ROOM_LIMIT_REACHED: 'Too many rooms. Try again later.',
       RATE_LIMITED: 'Please wait a moment and try again.', NOT_HOST: 'Only the host can start.',
       PLAYERS_NOT_READY: 'Everyone must be ready before starting.', NOT_ENOUGH_PLAYERS: 'At least two players are needed.',
-      CONNECTION_ERROR: 'Server unavailable. Try again shortly.'
+      CONNECTION_ERROR: 'Cannot connect. Try again soon.'
     };
     const target = this.screen === 'online-lobby' ? 'online-lobby-notice' : this.screen === 'playing' ? 'match-notice' : this.screen === 'results' ? 'result-summary' : 'online-notice';
-    this.byId(target).textContent = message[error.code] ?? 'The room action could not be completed.';
+    this.byId(target).textContent = message[error.code] ?? 'That did not work. Please try again.';
     if (target === 'match-notice') this.byId(target).hidden = false;
   }
 
   private renderHud(hud: MatchHud): void {
+    this.byId('loading-notice').hidden=true;
     this.byId('match-player').textContent = hud.localName;
     this.byId('alive-count').textContent = `${hud.alive} / ${hud.total}`;
     this.byId('bomb-count').textContent = String(hud.bombs); this.byId('fire-count').textContent = String(hud.fire);
+    const roster=this.byId('match-roster');
+    const signature=JSON.stringify(hud.players.map(p=>[p.id,p.name,p.slot,p.self,p.alive]));
+    if(roster.dataset.signature!==signature){roster.dataset.signature=signature;roster.replaceChildren(...hud.players.slice().sort((a,b)=>a.slot-b.slot).map(p=>{const li=document.createElement('li');li.textContent=`${p.self?'YOU':`P${p.slot}`} · ${p.name}${p.alive?'':' · OUT'}`;li.style.setProperty('--player-color',['#5fe2c4','#ff819b','#72bfff','#ffce58','#dbaaef','#f7f1d4'][p.slot-1]);return li;}));}
+  }
+
+  private artDownloadFailed():void {
+    this.byId('loading-notice').hidden=true;
+    const message='Game images did not load. Check your connection and try again.';
+    if(this.online.match)void this.leaveOnline().then(()=>{this.byId('home-notice').textContent=message;});
+    else{this.destroyGame();this.show('home');this.byId('home-notice').textContent=message;}
   }
 
   private showResult(result: RoundResult): void {
-    const title = result.kind === 'draw' ? 'DRAW' : result.winnerId === (this.online.match ? this.online.selfPlayerId : 'local') ? 'VICTORY' : `${result.winnerName} WINS`;
+    const title = result.kind === 'draw' ? 'DRAW' : result.winnerId === (this.online.match ? this.online.selfPlayerId : 'local') ? 'YOU WIN!' : `${result.winnerName} WINS`;
     this.byId('result-title').textContent = title;
-    this.byId('result-summary').textContent = result.kind === 'draw' ? 'Every remaining player was eliminated together.' : `${result.winnerName} is the last player standing.`;
+    this.byId('result-summary').textContent = result.kind === 'draw' ? 'No players left. Try again!' : `${result.winnerName} is the last player left.`;
     const statuses = this.byId('result-statuses'); statuses.replaceChildren(...result.statuses.map(status => {
       const item = document.createElement('li'); item.textContent = `${status.alive ? '●' : '○'} ${status.name} — ${status.alive ? 'SURVIVED' : 'OUT'}`; return item;
     }));

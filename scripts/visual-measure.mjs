@@ -14,10 +14,10 @@ const server = createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname).replace(/^\/Bomb-It\//, '');
     const path = join(repo, pathname || 'index.html');
     if (!path.startsWith(repo) || !statSync(path).isFile()) throw Error();
-    const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.mp3': 'audio/mpeg', '.svg': 'image/svg+xml' }[extname(path)] || 'application/octet-stream';
+    const mime = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.mp3': 'audio/mpeg', '.svg': 'image/svg+xml', '.png':'image/png', '.json':'application/json' }[extname(path)] || 'application/octet-stream';
     let body = readFileSync(path);
     res.setHeader('Content-Type', mime); res.setHeader('Cache-Control', 'no-store');
-    if (/text|javascript|svg/.test(mime)) { body = gzipSync(body); res.setHeader('Content-Encoding', 'gzip'); }
+    if (/text|javascript|svg|json/.test(mime)) { body = gzipSync(body); res.setHeader('Content-Encoding', 'gzip'); }
     res.setHeader('Content-Length', body.length); res.end(body);
   } catch { res.writeHead(404); res.end(); }
 });
@@ -38,7 +38,7 @@ try {
     const start=Date.now(); await page.goto('http://127.0.0.1:5188/Bomb-It/'); await page.locator('#quick-play').waitFor();
     const homeMs=Date.now()-start, homeBytes=bytes;
     await page.screenshot({path:join(output,`${label}-${width}-home.png`)});
-    const clickStart=Date.now(); await page.locator('#quick-play').click(); await page.locator('canvas').waitFor();
+    const clickStart=Date.now(); await page.locator('#quick-play').click(); await page.locator('canvas').waitFor();await page.waitForFunction(()=>document.querySelector('#alive-count').textContent==='2 / 2');
     const matchDelayMs=Date.now()-clickStart;
     const playMs=Date.now()-start;
     await page.screenshot({path:join(output,`${label}-${width}-match.png`)});

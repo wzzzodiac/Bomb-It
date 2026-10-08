@@ -1,0 +1,33 @@
+/* Bolt Club: the selected original comic palette. Layout/control rules stay in style.css. */
+:root{--bg:#261c46;--panel:#42336a;--panel-2:#514076;--line:#c6bae650;--line-soft:#c6bae630;--text:#fff1cf;--muted:#d2c7e4;--accent:#ffbc45;--accent-strong:#ffd785;--good:#5fe2c4;--danger:#ff819b;--amber:#ffce58}
+body{background-image:radial-gradient(ellipse at 50% 0%,#51407660,transparent 65%),linear-gradient(#c6bae60a 1px,transparent 1px),linear-gradient(90deg,#c6bae60a 1px,transparent 1px)}
+.menu-card{border-radius:12px;border:2px solid #b9a7d155;box-shadow:0 7px 0 #17122d,0 20px 50px #17122d44;background:var(--bg)}
+.menu-card::before{content:'BOMB-IT';background:var(--bg)}
+.result-card::before{content:'ROUND COMPLETE'}
+.arena-frame::before{content:'BOMB-IT / LIVE';background:var(--panel)}
+.eyebrow{color:#261c46;background:#ff819b;padding:5px 9px;width:max-content;max-width:100%;font-size:10px;letter-spacing:.12em;transform:rotate(-2deg)}
+.primary-button{border:2px solid #17122d;border-radius:3px;box-shadow:3px 3px 0 #ff819b;color:#261c46}
+.jumbo-button{box-shadow:3px 3px 0 #ff819b}.secondary-button{border-radius:6px}
+.secondary-button:hover:not(:disabled){background:#5c4689}
+input,.slot,.result-statuses li{background:#352651}.slot-identity{min-width:0}
+.slot-number{background:#5fe2c4}.slot:nth-child(2) .slot-number{background:#ff819b}.slot:nth-child(3) .slot-number{background:#72bfff}.slot:nth-child(4) .slot-number{background:#ffce58}.slot:nth-child(5) .slot-number{background:#dbaaef}.slot:nth-child(6) .slot-number{background:#f7f1d4}
+.match-hud,.arena-frame{background:var(--panel)}.arena-frame{box-shadow:0 5px 0 #17122d}#game{position:relative;background:#634d87}
+.dpad button{box-shadow:0 3px 0 #17122d}.dpad-center{color:#b9a7d1}
+.bomb-button{background:#ffbc45;color:#261c46;box-shadow:0 5px 0 #a6683b,inset 0 2px 0 #ffe2a1}
+.match-layout{grid-template-rows:auto minmax(0,1fr) auto auto auto}
+.match-roster{margin:0;padding:2px 0;list-style:none;display:flex;justify-content:center;gap:4px 10px;flex-wrap:wrap;font-size:10px;line-height:1.5}
+.match-roster li{border-left:3px solid var(--player-color);padding-left:5px;overflow-wrap:anywhere;max-width:190px}
+.player-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.player-label{position:absolute;top:0;left:0;max-width:22px;padding:1px 3px;font:800 9px/12px system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff1cf;background:#251b40;border:1px solid #fff1cf;border-radius:5px}
+.player-label.self{max-width:82px;background:#fff1cf;color:#261c46;border:1px solid #ffbc45;padding:0 4px;font-size:10px;line-height:11px}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.bolt-logo{display:block;position:relative;width:100%;height:300px;padding:0;margin:12px 0 6px;border:0;background:none;cursor:pointer;text-align:left;color:#ffbc45;isolation:isolate;touch-action:manipulation}
+.bolt-word{position:absolute;top:0;left:2px;font:italic 950 78px/.86 system-ui;letter-spacing:-.075em;transform:rotate(-4deg);text-shadow:3px 3px 0 #261c46,6px 6px 0 #ff819b;z-index:2}
+.logo-crew{position:absolute;bottom:0;right:0;width:280px;height:125px;display:flex;align-items:end}
+.logo-crew::before{content:'';position:absolute;inset:13px -6px 2px;background:#ff819b;transform:rotate(-8deg);z-index:-1}
+.logo-bot{display:block;flex:0 0 33.333%;height:94px;background-image:url('./assets/bolt/menu-crew.png');background-size:300% 100%;background-repeat:no-repeat;transform-origin:center bottom}.bot-a{background-position:0 0}.bot-b{background-position:50% 0}.bot-c{background-position:100% 0}
+.home-screen .tagline{font-size:14px;color:#fff1cf}.hero-card{max-width:590px}
+@media(min-width:761px) and (min-height:521px){.bolt-logo{height:235px}.bolt-word{font-size:102px}.logo-crew{width:285px;height:130px}.logo-bot{height:95px}.hero-card{max-width:660px}}
+@media(orientation:landscape) and (max-height:520px){.match-layout{grid-template-rows:28px minmax(0,1fr) auto}.match-roster{grid-column:1/-1;font-size:9px;line-height:1.25;padding:0}.hero-card{max-width:720px;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}.hero-card>.eyebrow{grid-column:1/-1}.bolt-logo{grid-row:2/5;margin:0;height:205px}.bolt-word{font-size:64px}.logo-crew{width:220px;height:85px}.logo-bot{height:74px}.profile-chip{margin:0;padding:8px}.hero-card .menu-actions{grid-template-columns:1fr 1fr;gap:7px}.hero-card .jumbo-button{min-height:46px;font-size:13px}.hero-card .jumbo-button small{font-size:9px}.home-screen{padding:12px!important}.hero-card{padding:16px}.match-hud{font-size:10px}}
+@media(max-width:350px){.bolt-word{font-size:67px}.logo-crew{width:250px}.logo-bot{height:83px}.bolt-logo{height:275px}.match-roster{font-size:9px}.player-label.self{max-width:68px}}
+@media(prefers-reduced-motion:reduce){.primary-button:active,.secondary-button:active,.bomb-button:active{transform:none}}

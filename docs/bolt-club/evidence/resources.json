@@ -1,0 +1,76 @@
+{
+  "method": "Unique required text gzip + original PNG/MP3; complete unchanged MP3 included once; no headers/cache/stream repetition",
+  "main": {
+    "raw": 2378527,
+    "download": 1425744
+  },
+  "bolt": {
+    "raw": 2620835,
+    "download": 1645321
+  },
+  "preScrapyard": {
+    "commit": "3f33845338818a32f3691273c0094ef76872b8ae",
+    "download": 1421441,
+    "source": "Fresh archive measurement, same compression"
+  },
+  "deltaVsMain": 219577,
+  "deltaVsPre": 223880,
+  "files": [
+    {
+      "file": "index.html",
+      "raw": 8244,
+      "download": 2384
+    },
+    {
+      "file": "assets/atlas-CVsJ7qbQ.png",
+      "raw": 110530,
+      "download": 110530
+    },
+    {
+      "file": "assets/atlas-DwkxhrDa.json",
+      "raw": 10324,
+      "download": 514
+    },
+    {
+      "file": "assets/blast-C7s98gy-.png",
+      "raw": 81980,
+      "download": 81980
+    },
+    {
+      "file": "assets/blast-CDnMX9mT.json",
+      "raw": 10422,
+      "download": 466
+    },
+    {
+      "file": "assets/bombit-g_dYMPig.mp3",
+      "raw": 1059072,
+      "download": 1059072
+    },
+    {
+      "file": "assets/engine-DrAsUNDs.js",
+      "raw": 1229365,
+      "download": 339178
+    },
+    {
+      "file": "assets/index-BIeLZH3P.css",
+      "raw": 18080,
+      "download": 4902
+    },
+    {
+      "file": "assets/index-Bndvsdzq.js",
+      "raw": 67112,
+      "download": 20589
+    },
+    {
+      "file": "assets/menu-crew-xW3uHBdb.png",
+      "raw": 25706,
+      "download": 25706
+    }
+  ],
+  "textureMemory": {
+    "atlasRgba": 2359296,
+    "blastRgba": 1048576,
+    "menuRgba": 196608
+  },
+  "budgetAdditionalBytes": 3000000
+}

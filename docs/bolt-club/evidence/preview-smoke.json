@@ -1,0 +1,18 @@
+{
+  "url": "https://wzzzodiac.github.io/Bomb-It-Preview/bolt-club/",
+  "browser": "154.0.4258.62",
+  "checks": [
+    "native Space replays finite logo",
+    "mobile tap replays logo",
+    "live Quick Play loads original nickname",
+    "live touch bomb and local results",
+    "public preview two-client online match with duplicate nicknames",
+    "public backend bomb death and results on both clients",
+    "live same-room replay",
+    "comparison accessible",
+    "all comparison images load",
+    "no browser runtime errors"
+  ],
+  "errors": [],
+  "physicalPhone": false
+}

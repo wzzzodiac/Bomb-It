@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "bomb power-up rendered and collected",
+    "fire power-up rendered and collected",
+    "reduced motion disables decorative bomb scale tween",
+    "crate visual replaced by floor; active flames and authoritative drop; escape survives",
+    "flame sprites removed at damaging lifetime end",
+    "failed renderer download leaves usable menu",
+    "reload recovers interrupted download",
+    "no runtime errors in visual fixtures"
+  ],
+  "errors": [],
+  "performance": {
+    "phaserFps": 112.05029296875,
+    "browserFps": 120.10151675624199,
+    "p95FrameMs": 8.5,
+    "over33ms": 0,
+    "frames": 601,
+    "sceneObjects": 224,
+    "atlas": {
+      "width": 768,
+      "height": 768
+    },
+    "scenario": "48 visual flame cells every 500ms for 5s; desktop Edge mobile emulation; no CPU throttling; no physical phone"
+  }
+}

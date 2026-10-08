@@ -1,6 +1,8 @@
 # Bomb-It
 
-A mobile-first Bomberman-style browser game with local Quick Play and server-authoritative online rounds. The Scrapyard visual refresh uses six original robots and a compact, locally generated sprite atlas.
+A mobile-first Bomberman-style browser game with local Quick Play and server-authoritative online rounds. This review branch implements Bolt Club: six expressive original robots, baked comic explosions and an accessible animated logo. Production stays on Scrapyard until this PR is approved and merged.
+
+Review preview: [Play Bolt Club](https://wzzzodiac.github.io/Bomb-It-Preview/bolt-club/). [Before/after comparison](https://wzzzodiac.github.io/Bomb-It-Preview/bolt-club/comparison/). See [implementation, measured resources and verification](docs/bolt-club.md).
 
 Live demo: [Play Bomb-It](https://wzzzodiac.github.io/Bomb-It/)
 
