@@ -7,3 +7,10 @@ node_modules/
 dist/
 .vite/
 *.log
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+credentials*.json
+outputs/visual-qa/
