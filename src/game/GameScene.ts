@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
-import { ART, prepareArt, ROBOT_COLORS, tileFrame } from './art.ts';
+import { ART, BLAST, blastMasks, prepareArt, ROBOT_COLORS, tileFrame } from './art.ts';
+import atlasUrl from '../assets/bolt/atlas.png?url';
+import atlasDataUrl from '../assets/bolt/atlas.json?url';
+import blastUrl from '../assets/bolt/blast.png?url';
+import blastDataUrl from '../assets/bolt/blast.json?url';
+import { PlayerLabels, type LabelPlayer } from '../ui/playerLabels.ts';
 import { allocateSpawns, blastTiles, createArena, tileAt, type Arena } from './arena.ts';
 import { canEscapeBomb, findEscapeDirection, type BombThreat } from './botLogic.ts';
 import { BotController, LocalController, RemoteController, type ControllerHost, type PlayerController } from './controllers.ts';
@@ -12,10 +17,10 @@ import type { BombAck, InitialMatchState, InputAck, MatchExplosion, MatchState }
 
 type Bomb = { position: Point; ownerId: PlayerId; range: number; body: Phaser.GameObjects.Container; timer: Phaser.Time.TimerEvent; exploded: boolean };
 type PowerUp = { kind: 'bomb' | 'fire'; body: Phaser.GameObjects.Container };
-export type MatchHud = { alive: number; total: number; localName: string; bombs: number; fire: number };
+export type MatchHud = { alive: number; total: number; localName: string; bombs: number; fire: number; players:LabelPlayer[] };
 export type MatchOptions =
-  | { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void; online?: never }
-  | { arenaSize: ArenaSize; onHud: (hud: MatchHud) => void; online: { initial: InitialMatchState; selfPlayerId: string; sendDirection: (direction: Direction, onAck: (result: InputAck) => void) => boolean; sendBomb: (onAck: (result: BombAck) => void) => boolean }; participants?: never; onResult?: never };
+  | { participants: Participant[]; arenaSize: ArenaSize; onResult: (result: RoundResult) => void; onHud: (hud: MatchHud) => void; onAssetError?:()=>void; online?: never }
+  | { arenaSize: ArenaSize; onHud: (hud: MatchHud) => void; onAssetError?:()=>void; online: { initial: InitialMatchState; selfPlayerId: string; sendDirection: (direction: Direction, onAck: (result: InputAck) => void) => boolean; sendBomb: (onAck: (result: BombAck) => void) => boolean }; participants?: never; onResult?: never };
 
 const COLORS = ROBOT_COLORS;
 
@@ -45,10 +50,21 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   private pendingOnlineState: MatchState | null = null;
   private pendingOnlineExplosions: MatchExplosion[] = [];
   private lastOnlineInput = -135;
+  private artReady=false;
+  private visualSlots = new Map<PlayerId,number>();
+  private labels:PlayerLabels | null = null;
+  private visualHazards = new Map<Phaser.GameObjects.Sprite,Point>();
 
   constructor(private readonly options: MatchOptions) { super('Game'); }
 
+  preload():void {
+    this.load.atlas(ART,atlasUrl,atlasDataUrl);
+    this.load.atlas(BLAST,blastUrl,blastDataUrl);
+  }
+
   create(): void {
+    if(!this.textures.exists(ART)||!this.textures.exists(BLAST)){this.options.onAssetError?.();return;}
+    this.artReady=true;
     if (this.options.online) { this.createOnline(); return; }
     const { cols, rows } = this.options.arenaSize;
     const participants = this.options.participants.slice(0, 6);
@@ -72,7 +88,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   }
 
   update(time: number): void {
-    if (this.finished) return;
+    if (this.finished || !this.artReady) return;
     if (this.options.online) {
       if (Phaser.Input.Keyboard.JustDown(this.space)) this.queueOnlineBomb();
       const direction = this.localDirection();
@@ -103,7 +119,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     this.pendingBombTimer = this.time.delayedCall(4000, () => this.clearPendingBomb());
     const sent = online.sendBomb(result => {
       if (!result.ok || !result.placed) this.clearPendingBomb();
-      else if (this.onlineRevision >= result.revision) this.clearPendingBomb();
+      else {this.reactPlayer(online.selfPlayerId);if (this.onlineRevision >= result.revision) this.clearPendingBomb();}
     });
     if (!sent) this.clearPendingBomb();
   }
@@ -115,6 +131,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     if (!this.walkable(next, id)) return false;
     player.position = next;
     const view = this.views.get(id)!;
+    this.animatePlayer(id,direction);
     this.tweens.add({ targets: view, x: next.x * TILE + TILE / 2, y: next.y * TILE + TILE / 2, duration: 105, ease: 'Sine.easeOut' });
     if (this.flames.has(key(next))) { this.killPlayer(player); this.resolveResult(); }
     this.collect(player, next);
@@ -129,6 +146,7 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     const body = this.createBombView(position);
     const bomb: Bomb = { position, ownerId: owner.id, range: owner.fireRange, body, exploded: false, timer: this.time.delayedCall(FUSE_MS, () => this.explode(bomb)) };
     this.bombs.set(key(position), bomb); claimBomb(owner);
+    this.reactPlayer(id);
     this.updateHud();
     return true;
   }
@@ -163,6 +181,8 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
 
   private drawArena(): void {
     prepareArt(this);
+    const parent=document.getElementById('game');
+    if(parent){this.labels=new PlayerLabels(parent);this.events.on(Phaser.Scenes.Events.POST_UPDATE,()=>this.labels?.update(this.labelPlayers(),this.scale.width,this.scale.height,[...this.visualHazards.values()]));this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>this.labels?.destroy());}
     this.tiles = [];
     for (let y = 0; y < this.arena.length; y++) {
       this.tiles[y] = [];
@@ -221,7 +241,8 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
       this.arena[change.y][change.x] = change.tile;
       this.tiles[change.y][change.x].setFrame(tileFrame(change.tile, change.x, change.y));
     }
-    for (const point of event.tiles) this.renderFlame(point, event.durationMs);
+    const masks=blastMasks(event.tiles);
+    event.tiles.forEach((point,index)=>this.renderFlame(point,event.durationMs,masks[index]));
   }
 
   private applyOnlineObjects(state: MatchState): void {
@@ -256,6 +277,8 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   private moveOnlineView(id: PlayerId, point: Point, duration: number): void {
     const view = this.views.get(id);
     if (!view || this.onlineViewTargets.get(id) === key(point)) return;
+    const dx=point.x*TILE+TILE/2-view.x,dy=point.y*TILE+TILE/2-view.y;
+    this.animatePlayer(id,Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));
     this.onlineViewTargets.set(id, key(point));
     this.tweens.killTweensOf(view);
     this.tweens.add({ targets: view, x: point.x * TILE + TILE / 2, y: point.y * TILE + TILE / 2, duration, ease: 'Linear' });
@@ -275,10 +298,26 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   }
 
   private createPlayerView(player: PlayerState): Phaser.GameObjects.Container {
+    const slot=player.controller==='local'?1:2+[...this.visualSlots.values()].filter(n=>n!==1).length;
+    this.visualSlots.set(player.id,slot);
     const body = this.add.container(player.position.x * TILE + TILE / 2, player.position.y * TILE + TILE / 2).setDepth(5);
-    body.add(this.add.image(0, 0, ART, `robot${Math.max(0, COLORS.indexOf(player.color))}`).setDisplaySize(TILE, TILE));
+    body.add(this.add.sprite(0, 0, ART, `bot-${slot-1}-down-0`).setDisplaySize(TILE, TILE));
     if (player.controller === 'local') body.add(this.add.triangle(0, 18, 0, 0, 6, 0, 3, -3, 0xffffff).setOrigin(0.5));
     return body;
+  }
+
+  private animatePlayer(id:PlayerId,direction:Direction):void {
+    const sprite=this.views.get(id)?.list[0] as Phaser.GameObjects.Sprite | undefined;
+    const slot=this.visualSlots.get(id);if(!sprite||!slot)return;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)sprite.setFrame(`bot-${slot-1}-${direction}-0`);
+    else sprite.play(`walk-${slot-1}-${direction}`);
+  }
+  private labelPlayers():LabelPlayer[]{return [...this.players.values()].map(p=>({id:p.id,name:p.name,slot:this.visualSlots.get(p.id)??1,self:p.controller==='local',alive:p.alive,x:this.views.get(p.id)?.x??0,y:this.views.get(p.id)?.y??0}));}
+  private reactPlayer(id:PlayerId):void {
+    const sprite=this.views.get(id)?.list[0] as Phaser.GameObjects.Sprite | undefined,slot=this.visualSlots.get(id);
+    if(!sprite||!slot||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    const previous=sprite.frame.name,frame=`react-${slot-1}`;sprite.stop().setFrame(frame);
+    this.time.delayedCall(280,()=>{if(sprite.active&&sprite.frame.name===frame)sprite.setFrame(previous);});
   }
 
   private createBombView(position: Point): Phaser.GameObjects.Container {
@@ -290,12 +329,12 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     return body;
   }
 
-  private renderFlame(point: Point, durationMs: number): void {
-    const flame = this.add.container(point.x * TILE + TILE / 2, point.y * TILE + TILE / 2).setDepth(4);
-    flame.add(this.add.image(0, 0, ART, 'flame').setDisplaySize(TILE, TILE));
-    // Danger remains clearly visible for the entire authoritative flame lifetime.
-    this.tweens.add({ targets: flame, alpha: 0.8, duration: Math.max(1, durationMs - 100), ease: 'Sine.easeIn' });
-    this.time.delayedCall(durationMs, () => flame.destroy());
+  private renderFlame(point: Point, durationMs: number, mask=15): void {
+    const flame=this.add.sprite(point.x*TILE+TILE/2,point.y*TILE+TILE/2,BLAST,`blast-${mask}-0`).setDisplaySize(TILE,TILE).setDepth(4);
+    this.visualHazards.set(flame,point);
+    if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)flame.play(`blast-${mask}`);
+    // Constant readable danger; no residual, alpha fade or oversized particles.
+    this.time.delayedCall(durationMs,()=>{this.visualHazards.delete(flame);flame.destroy();});
   }
 
   private localDirection(): Direction | null {
@@ -325,14 +364,15 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
     if (bomb.exploded || this.finished) return;
     bomb.exploded = true; bomb.timer.remove(); bomb.body.destroy(); this.bombs.delete(key(bomb.position));
     const owner = this.players.get(bomb.ownerId); if (owner) releaseBomb(owner);
-    for (const point of blastTiles(this.arena, bomb.position, bomb.range)) {
+    const points=blastTiles(this.arena,bomb.position,bomb.range),masks=blastMasks(points);
+    for (const [index,point] of points.entries()) {
       if (tileAt(this.arena, point) === 'crate') {
         this.arena[point.y][point.x] = 'floor'; this.tiles[point.y][point.x].setFrame(tileFrame('floor', point.x, point.y));
         if (Math.random() < 0.22) this.spawnPowerUp(point);
       }
       const chained = this.bombs.get(key(point)); if (chained) this.time.delayedCall(0, () => this.explode(chained));
       this.flames.add(key(point));
-      this.renderFlame(point, FLAME_MS);
+      this.renderFlame(point, FLAME_MS,masks[index]);
       this.time.delayedCall(FLAME_MS, () => this.flames.delete(key(point)));
       for (const player of this.players.values()) if (player.alive && key(player.position) === key(point)) this.killPlayer(player);
     }
@@ -351,12 +391,13 @@ export class GameScene extends Phaser.Scene implements ControllerHost {
   private collect(player: PlayerState, point: Point): void {
     const power = this.powerUps.get(key(point)); if (!power) return;
     if (power.kind === 'bomb') player.bombCapacity++; else player.fireRange++;
+    this.reactPlayer(player.id);
     power.body.destroy(); this.powerUps.delete(key(point)); this.updateHud();
   }
   private killPlayer(player: PlayerState): void { player.alive = false; this.views.get(player.id)?.setAlpha(0.28); }
   private updateHud(): void {
     const local = [...this.players.values()].find(player => player.controller === 'local') ?? [...this.players.values()][0];
-    this.options.onHud({ alive: [...this.players.values()].filter(player => player.alive).length, total: this.players.size, localName: local?.name ?? 'Player', bombs: local?.bombCapacity ?? 1, fire: local?.fireRange ?? 2 });
+    this.options.onHud({ alive: [...this.players.values()].filter(player => player.alive).length, total: this.players.size, localName: local?.name ?? 'Player', bombs: local?.bombCapacity ?? 1, fire: local?.fireRange ?? 2, players:this.labelPlayers() });
   }
   private resolveResult(): void {
     if (this.options.online) return;

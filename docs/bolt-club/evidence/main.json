@@ -1,0 +1,154 @@
+{
+  "label": "main",
+  "browser": "154.0.4258.62",
+  "conditions": "cold context; cache disabled; gzip HTML/JS/CSS; 1.6 Mbps down / 750 Kbps up; 150 ms latency; no CPU throttle; Edge desktop emulation, not a real phone",
+  "viewports": [
+    {
+      "width": 1366,
+      "height": 768,
+      "homeMs": 523,
+      "playMs": 3169,
+      "matchDelayMs": 2403,
+      "homeBytes": 27984,
+      "completedRequestsBytes": 367496,
+      "streamedBodyBytes": 618450,
+      "requests": [
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/",
+          "type": "Document"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-BNRrKjF4.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index--hMa6Yom.css",
+          "type": "Stylesheet"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/engine-DTGcn6WC.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        }
+      ],
+      "errors": [],
+      "fps": 120.26637511181785,
+      "slowFrames": 0,
+      "frames": 121,
+      "canvas": {
+        "width": 680,
+        "height": 520,
+        "visibleWidth": 789,
+        "visibleHeight": 603.34375
+      },
+      "overlap": false,
+      "scroll": false,
+      "bomb": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "homeMs": 518,
+      "playMs": 2978,
+      "matchDelayMs": 2422,
+      "homeBytes": 27984,
+      "completedRequestsBytes": 367496,
+      "streamedBodyBytes": 625950,
+      "requests": [
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/",
+          "type": "Document"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-BNRrKjF4.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index--hMa6Yom.css",
+          "type": "Stylesheet"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/engine-DTGcn6WC.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        }
+      ],
+      "errors": [],
+      "fps": 120.7343843544203,
+      "slowFrames": 0,
+      "frames": 121,
+      "canvas": {
+        "width": 680,
+        "height": 520,
+        "visibleWidth": 358,
+        "visibleHeight": 273.75
+      },
+      "overlap": false,
+      "scroll": false,
+      "bomb": 106
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "homeMs": 542,
+      "playMs": 2990,
+      "matchDelayMs": 2418,
+      "homeBytes": 27984,
+      "completedRequestsBytes": 367496,
+      "streamedBodyBytes": 621450,
+      "requests": [
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/",
+          "type": "Document"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index-BNRrKjF4.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/index--hMa6Yom.css",
+          "type": "Stylesheet"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/engine-DTGcn6WC.js",
+          "type": "Script"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        },
+        {
+          "url": "http://127.0.0.1:5188/Bomb-It/assets/bombit-g_dYMPig.mp3",
+          "type": "Media"
+        }
+      ],
+      "errors": [],
+      "fps": 120.43396038636352,
+      "slowFrames": 0,
+      "frames": 121,
+      "canvas": {
+        "width": 680,
+        "height": 520,
+        "visibleWidth": 436.765625,
+        "visibleHeight": 333.984375
+      },
+      "overlap": false,
+      "scroll": false,
+      "bomb": 92.828125
+    }
+  ]
+}

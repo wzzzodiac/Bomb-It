@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#10232b" />
+    <meta name="theme-color" content="#261c46" />
     <meta name="description" content="Bomb-It, a mobile-first browser bomber game by W.ZC." />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='9' fill='%2356dcb4'/%3E%3Crect x='6' y='10' width='28' height='20' rx='5' fill='%23122d3e'/%3E%3Cpath d='M12 20h4m8 0h4' stroke='%23e5f8d7' stroke-width='4'/%3E%3C/svg%3E" />
     <title>Bomb-It | W.ZC</title>
@@ -13,9 +13,9 @@
       <p id="loading-notice" class="loading-notice" role="status" aria-live="polite" hidden></p>
       <section class="app-screen profile-screen" data-view="profile" aria-labelledby="profile-title">
         <div class="menu-card compact-card">
-          <span class="eyebrow">WELCOME TO THE SCRAPYARD</span>
+          <span class="eyebrow">WELCOME TO BOLT CLUB</span>
           <h1 id="profile-title">Bomb<span class="title-mark">-It</span></h1>
-          <p>Pick the name your friends will see in the arena.</p>
+          <p>Choose your player name.</p>
           <form id="profile-form">
             <label for="nickname">Nickname</label>
             <input id="nickname" name="nickname" maxlength="18" autocomplete="nickname" placeholder="Player name" required />
@@ -27,10 +27,13 @@
 
       <section class="app-screen home-screen" data-view="home" aria-labelledby="home-title" hidden>
         <div class="menu-card hero-card">
-          <span class="eyebrow">SMALL ROBOTS. BIG TROUBLE.</span>
-          <h1 id="home-title">Bomb<span class="title-mark">-It</span></h1>
-          <p class="tagline">Blast the crates. Outlast every rival.</p>
-          <img class="hero-art" src="../src/assets/scrapyard.svg" alt="Three colourful scrap robots in a workshop arena" width="600" height="210" />
+          <span class="eyebrow">BOLT CLUB / ONE MORE ROUND</span>
+          <h1 id="home-title" class="sr-only">Bomb-It</h1>
+          <button id="bolt-logo" class="bolt-logo" type="button" aria-label="Bomb-It. Play the robot animation">
+            <span class="bolt-word" aria-hidden="true">BOMB<br>IT!</span>
+            <span class="logo-crew" aria-hidden="true"><span class="logo-bot bot-a"></span><span class="logo-bot bot-b"></span><span class="logo-bot bot-c"></span></span>
+          </button>
+          <p class="tagline">Break boxes. Stay safe. Win the round.</p>
           <div class="profile-chip">Playing as <strong id="home-nickname"></strong> <button id="edit-profile" class="text-button">Change</button></div>
           <div class="menu-actions">
             <button id="quick-play" class="primary-button jumbo-button">▶ Quick Play <small>You vs. a bot</small></button>
@@ -45,7 +48,7 @@
         <div class="menu-card compact-card">
           <span class="eyebrow">BRING YOUR CREW</span>
           <h1 id="online-title">Online</h1>
-          <p>Create a room or join a friend with their four-letter code.</p>
+          <p>Create a room or enter your friend's room code.</p>
           <div class="menu-actions"><button id="online-create" class="primary-button">Create Room</button></div>
           <label for="online-code">Room code</label>
           <input id="online-code" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" />
@@ -69,7 +72,7 @@
       <section class="app-screen lobby-screen" data-view="lobby" aria-labelledby="lobby-title" hidden>
         <div class="menu-card lobby-card">
           <div class="lobby-heading"><div><span class="eyebrow">LOCAL ROOM</span><h1 id="lobby-title">ROOM <span id="room-code"></span></h1></div><span class="local-pill">LOCAL ONLY</span></div>
-          <p>Your workshop, your crew. Add up to five bots and jump in.</p>
+          <p>Add up to five bots. Then start a match.</p>
           <ol id="slots" class="slot-list" aria-label="Room player slots"></ol>
           <div class="lobby-actions">
             <button id="add-bot" class="secondary-button">+ Add Bot</button>
@@ -80,7 +83,7 @@
       </section>
 
       <section class="app-screen match-screen" data-view="playing" aria-label="Active match" hidden>
-        <div class="rotate-hint" role="status"><span>↻</span><strong>Rotate for the best view</strong><small>Portrait still works if rotation is unavailable.</small></div>
+        <div class="rotate-hint" role="status"><span>↻</span><strong>Turn your phone for a bigger view</strong><small>You can also play this way.</small></div>
         <div class="match-layout">
           <header class="match-hud">
             <span>ROOM <strong id="match-room"></strong></span>
@@ -101,6 +104,7 @@
             <button class="bomb-button" id="bomb-button" aria-label="Place bomb">BOMB</button>
           </div>
           <p class="desktop-hint" id="match-hint"><span>WASD / arrows</span> move <i>•</i> <span>Space</span> bomb</p>
+          <ul id="match-roster" class="match-roster" aria-label="Players"></ul>
           <p id="match-notice" class="match-notice" role="status" aria-live="polite" hidden></p>
         </div>
       </section>
